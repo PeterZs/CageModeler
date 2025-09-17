@@ -36,6 +36,7 @@ add_executable(${PROJECT_NAME}
     UI/NewProjectPanel.cpp
     UI/ToolBar.cpp
     UI/UserInterfaceBackend.cpp
+    UI/NewCagePanel.cpp
     Tools/ToolSystem.cpp
     Thread/ThreadPool.cpp
     Input/InputSubsystem.cpp

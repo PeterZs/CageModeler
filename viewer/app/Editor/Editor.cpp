@@ -16,6 +16,7 @@
 #include <UI/ToolBar.h>
 #include <UI/ProjectOptionsPanel.h>
 #include <UI/ProjectSettingsPanel.h>
+#include <UI/NewCagePanel.h>
 
 #include <filesystem>
 
@@ -247,6 +248,15 @@ void Editor::RecordUI()
 				_projectSettingsPanel->Present();
 			}
 
+			if (ImGui::MenuItem("New Cage..."))
+			{	
+				_newCagePanel = std::make_shared<NewCagePanel>(
+					_meshOperationSystem,
+					[this] { OnNewCageCancelled(); },
+					[this] { OnNewCageCreated(); });
+				_newCagePanel->Present();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -265,6 +275,11 @@ void Editor::RecordUI()
 	if (_projectSettingsPanel != nullptr)
 	{
 		_projectSettingsPanel->Layout();
+	}
+
+	if (_newCagePanel != nullptr)
+	{
+		_newCagePanel->Layout();
 	}
 
 	// If we are making a rectangle selection on the screen we want to do it before we process any mesh selection, so we can use the data.
@@ -288,6 +303,11 @@ void Editor::Update(const double deltaTime)
 	}
 
 	if (_projectSettingsPanel != nullptr && _projectSettingsPanel->IsModalPanelVisible())
+	{
+		return;
+	}
+
+	if (_newCagePanel != nullptr && _newCagePanel->IsModalPanelVisible())
 	{
 		return;
 	}
@@ -468,6 +488,13 @@ void Editor::OnProjectSettingsApplied()
 	OnNewProjectCreated();
 }
 
+void Editor::OnNewCageCreated()
+{
+	std::cout << "Test" << std::endl;
+
+	return;
+}
+
 void Editor::OnNewProjectCreated()
 {
 	if (_projectModel->CheckMissingFiles())
@@ -623,6 +650,11 @@ void Editor::OnNewProjectCreated()
 void Editor::OnProjectSettingsCancelled()
 {
 	_projectSettingsPanel = nullptr;
+}
+
+void Editor::OnNewCageCancelled()
+{
+	_newCagePanel = nullptr;
 }
 
 void Editor::UpdateGizmoSelection(const ViewInfo& viewInfo, const GizmoType activeGizmoType)

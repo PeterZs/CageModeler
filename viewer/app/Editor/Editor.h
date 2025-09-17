@@ -21,6 +21,7 @@ class ToolBar;
 class StatusBar;
 class RenderPipelineManager;
 class InputSubsystem;
+class NewCagePanel;
 
 /**
  * This class serves as a mediator between the user interface backend and the current state of the application.
@@ -58,6 +59,16 @@ private:
 	 * Invoked when the project settings have been changed and new ones have been applied.
 	 */
 	void OnProjectSettingsApplied();
+
+	/**
+	 * Invoked when the new cage window is cancelled.
+	 */
+	void OnNewCageCancelled();
+
+	/**
+	 * Invoked when a new cage has been created from the window.
+	 */
+	void OnNewCageCreated();
 
 	/**
 	 * Invoked when the project settings get cancelled.
@@ -264,6 +275,9 @@ private:
 
 	/// The modal panel to adjust the project settings (only input files).
 	std::shared_ptr<ProjectSettingsPanel> _projectSettingsPanel = nullptr;
+
+	// The modal panel to create a new cage
+	std::shared_ptr<NewCagePanel> _newCagePanel = nullptr;
 
 	/// The panel to set the project settings.
 	std::shared_ptr<ProjectOptionsPanel> _projectOptionsPanel = nullptr;
