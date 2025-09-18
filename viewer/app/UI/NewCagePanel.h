@@ -37,10 +37,10 @@ private:
 	std::function<void ()> _cancelDelegate;
 	std::function<void ()> _createDelegate;
 
-	uint32_t _selectedDeformationTypeIndex = -1;
-	uint32_t _selectedWeightingSchemeIndex = -1;
+	// uint32_t _selectedDeformationTypeIndex = -1;
+	// uint32_t _selectedWeightingSchemeIndex = -1;
 
-	/// Keeps track inside ImGui whether the New Project popup should be displayed.
+	/// Keeps track inside ImGui whether the New Cage popup should be displayed.
 	bool _isModalVisible = false;
 
 	uint32_t _createButtonPressed : 1;

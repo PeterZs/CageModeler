@@ -55,6 +55,7 @@ add_executable(${PROJECT_NAME}
     Mesh/Operations/MeshExportInfluenceMapOperation.cpp
     Mesh/Operations/MeshLoadOperation.cpp
     Mesh/Operations/MeshExportOperation.cpp
+    Mesh/Operations/MeshCageGeneration.cpp
     Rendering/Commands/BufferCommand.h
     Rendering/Commands/RenderCommandScheduler.cpp
     Rendering/Core/RenderProxy.cpp

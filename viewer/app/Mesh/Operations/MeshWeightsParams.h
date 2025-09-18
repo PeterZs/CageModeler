@@ -135,6 +135,17 @@ struct MeshComputeDeformationOperationResult
 	std::vector<InterpolatedVertexData> _vertexData;
 };
 
+
+struct MeshCageGenerationResult
+{
+	void Update()
+	{
+		_vertexData = true;
+	}
+
+	bool _vertexData;
+};
+
 struct ProjectData
 {
 	ProjectData(const DeformationType deformationType,

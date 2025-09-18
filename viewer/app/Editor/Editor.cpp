@@ -490,7 +490,26 @@ void Editor::OnProjectSettingsApplied()
 
 void Editor::OnNewCageCreated()
 {
-	std::cout << "Test" << std::endl;
+	// Remove the current cage
+	if (_deformedCageHandle != InvalidHandle)
+	{
+		_scene->RemoveMesh(_deformedCageHandle);
+		_deformedCageHandle = InvalidHandle;
+	}
+	// _deformedCageHandle = _scene->AddCage(_projectData->_deformedCage._vertices, _projectData->_deformedCage._faces);
+	// const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
+
+	_threadPool->Submit([this](){
+		
+	});
+
+	
+
+	if (_newCagePanel != nullptr)
+	{
+		_newCagePanel->Dismiss();
+		_newCagePanel = nullptr;
+	}
 
 	return;
 }
