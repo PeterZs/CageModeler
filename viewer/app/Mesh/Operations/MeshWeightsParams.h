@@ -138,12 +138,9 @@ struct MeshComputeDeformationOperationResult
 
 struct MeshCageGenerationResult
 {
-	void Update()
-	{
-		_vertexData = true;
-	}
 
-	bool _vertexData;
+
+	int32_t _vertexData;
 };
 
 struct ProjectData

@@ -144,6 +144,12 @@ private:
 		const bool interpolateWeights) const;
 
 	/**
+	 * Generate a new cage given the mesh. 
+	 * 
+	 */
+	[[nodiscard]] MeshOperationResult<MeshCageGenerationResult> GenerateCage(const ProjectData& projectData) const;
+
+	/**
 	 * Sets the gizmo position based on the selection.
 	 * @param viewInfo The current camera view info.
 	 */

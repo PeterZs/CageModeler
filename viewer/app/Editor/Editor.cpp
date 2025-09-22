@@ -9,6 +9,7 @@
 #include <Mesh/Operations/MeshComputeWeightsOperation.h>
 #include <Mesh/Operations/MeshExportOperation.h>
 #include <Mesh/Operations/MeshLoadOperation.h>
+#include <Mesh/Operations/MeshCageGeneration.h>
 #include <Mesh/MeshLibrary.h>
 #include <Navigation/CameraSubsystem.h>
 #include <UI/UIStyle.h>
@@ -500,9 +501,21 @@ void Editor::OnNewCageCreated()
 	// const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
 
 	_threadPool->Submit([this](){
+
+		auto result = GenerateCage(*_projectData);	
+
+		if (result.HasError())
+		{
+			std::cout << "Error" << std::endl;
+
+			return;
+		}
+
 		
+
 	});
 
+	
 	
 
 	if (_newCagePanel != nullptr)
@@ -1294,6 +1307,14 @@ MeshOperationResult<MeshComputeWeightsOperationResult> Editor::ComputeCageWeight
 		projectData.CanInterpolateWeights(),
 		projectData._numBBWSteps,
 		projectData._numSamples);
+}
+
+MeshOperationResult<MeshCageGenerationResult> Editor::GenerateCage(const ProjectData& projectData) const
+{
+	return _meshOperationSystem->ExecuteOperation<MeshCageGeneration>(
+		projectData._mesh,
+		projectData._cage
+	);
 }
 
 MeshOperationResult<MeshComputeDeformationOperationResult> Editor::ComputeDeformedMesh(EigenMesh mesh,

@@ -1,0 +1,19 @@
+@PACKAGE_INIT@
+
+get_filename_component(CAGEGENERATIONS_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+check_required_components(@LIBRARY_NAME@)
+
+include(CMakeFindDependencyMacro)
+
+list(APPEND CMAKE_MODULE_PATH ${CAGEGENERATIONS_CMAKE_DIR})
+
+find_dependency(OpenMP)  # falls du OpenMP im Code nutzt, sonst kannst du das löschen
+list(REMOVE_AT CMAKE_MODULE_PATH -1)
+
+
+if (NOT TARGET @ALIAS_NAME@::@LIBRARY_NAME@)
+    include("${CAGEGENERATIONS_CMAKE_DIR}/@ALIAS_NAME@Targets.cmake")
+endif()
+
+set(CAGEGENERATIONS_LIBRARIES @ALIAS_NAME@::@LIBRARY_NAME@)
+

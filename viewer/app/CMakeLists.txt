@@ -144,6 +144,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
         cagedeformations
+        cagegenerations
         spdlog::spdlog
         glm
         volk::volk volk::volk_headers
