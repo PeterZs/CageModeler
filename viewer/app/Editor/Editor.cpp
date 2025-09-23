@@ -506,12 +506,11 @@ void Editor::OnNewCageCreated()
 
 		if (result.HasError())
 		{
-			std::cout << "Error" << std::endl;
-
+			std::cout << "Error" << std::endl; ///////////////
 			return;
 		}
 
-		
+		_deformedCageHandle = _scene->AddCage(result.GetValue()._cage_vertices, result.GetValue()._cage_faces);
 
 	});
 

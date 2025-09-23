@@ -137,10 +137,9 @@ struct MeshComputeDeformationOperationResult
 
 
 struct MeshCageGenerationResult
-{
-
-
-	int32_t _vertexData;
+{	
+	Eigen::MatrixXd _cage_vertices;
+	Eigen::MatrixXi _cage_faces;
 };
 
 struct ProjectData
