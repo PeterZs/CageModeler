@@ -8,6 +8,7 @@
 #include <limits>
 
 static const double EPSILON_BB = 0.15;
+static const float PREDEFINED_SPARSE_FACTOR = 0.5;
 
 
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter)
@@ -60,7 +61,7 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     // and store it already in the cage for instance
     // delete cage for now
     cage_vertices = Eigen::MatrixXd::Zero(8, 3);
-    cage_faces = Eigen::MatrixXi::Zero(12, 8);
+    cage_faces = Eigen::MatrixXi::Zero(12, 3);
 
     cage_vertices.row(0) = Eigen::Vector3d(min_coordinates[0], min_coordinates[1], min_coordinates[2]);
     cage_vertices.row(1) = Eigen::Vector3d(max_coordinates[0], min_coordinates[1], min_coordinates[2]);
@@ -92,6 +93,12 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     }
 }
 
+void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, float degreeSparseness = PREDEFINED_SPARSE_FACTOR)
+{
+    int voxel_resolution = (int)(sqrt(mesh_vertices.rows() * degreeSparseness) / 6.0);
+    
+}
+
 void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
 {   
     
@@ -102,5 +109,6 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_ve
 
     computeBB(pca_based_mesh_vertices, cage_vertices, cage_faces, pca_basic_matrix, barycenter);
 
-    
+    // float sparse_factor = 0.3 // optinally user can define the sparse factor 
+    voxelizeBB(mesh_vertices, cage_vertices);
 };

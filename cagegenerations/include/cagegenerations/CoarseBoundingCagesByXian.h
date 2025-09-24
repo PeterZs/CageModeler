@@ -12,5 +12,7 @@ void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_bas
 
 void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const Eigen::MatrixXd& pca_basic_matrix, const Eigen::Vector3d& barycenter);
 
+void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, float degreeOfSparseness);
+
 void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
 

@@ -19,6 +19,9 @@
 #include <UI/ProjectSettingsPanel.h>
 #include <UI/NewCagePanel.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp> // <- stellt glm::to_string bereit
+
 #include <filesystem>
 
 namespace
@@ -497,8 +500,11 @@ void Editor::OnNewCageCreated()
 		_scene->RemoveMesh(_deformedCageHandle);
 		_deformedCageHandle = InvalidHandle;
 	}
-	// _deformedCageHandle = _scene->AddCage(_projectData->_deformedCage._vertices, _projectData->_deformedCage._faces);
-	// const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
+	if (_deformedMeshHandle != InvalidHandle)
+	{
+		_scene->RemoveMesh(_deformedMeshHandle);
+		_deformedMeshHandle = InvalidHandle;
+	}
 
 	_threadPool->Submit([this](){
 
@@ -510,7 +516,17 @@ void Editor::OnNewCageCreated()
 			return;
 		}
 
+		const auto translation = glm::translate(glm::mat4(1.0f), glm::vec3(_projectData->_centerOffset));
+		const auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(_projectData->_scalingFactor));
+		const auto newModelMatrix = scale * translation;	
+		
+		_deformedMeshHandle = _scene->AddMesh(_projectData->_mesh._vertices, _projectData->_mesh._faces);
+		const auto mesh = _scene->GetMesh(_deformedMeshHandle);
+		mesh->SetModelMatrix(newModelMatrix);
+
 		_deformedCageHandle = _scene->AddCage(result.GetValue()._cage_vertices, result.GetValue()._cage_faces);
+		const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
+		cageMesh->SetModelMatrix(newModelMatrix);
 
 	});
 
