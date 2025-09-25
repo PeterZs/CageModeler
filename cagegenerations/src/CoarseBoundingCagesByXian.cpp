@@ -93,10 +93,155 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     }
 }
 
-void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, float degreeSparseness = PREDEFINED_SPARSE_FACTOR)
-{
-    int voxel_resolution = (int)(sqrt(mesh_vertices.rows() * degreeSparseness) / 6.0);
-    
+void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel& voxels, float degreeSparseness = PREDEFINED_SPARSE_FACTOR)
+{    
+    Eigen::Vector3d max_coordinates(-std::numeric_limits<double>::max(),   -std::numeric_limits<double>::max(),    -std::numeric_limits<double>::max());
+    Eigen::Vector3d min_coordinates(std::numeric_limits<double>::max(),    std::numeric_limits<double>::max(),     std::numeric_limits<double>::max());
+    Eigen::Vector3d p;
+    for (int i = 0; i < cage_vertices.rows(); i++) 
+    {   
+        p = cage_vertices.row(i);
+        for (int j = 0; j < 3; j++) 
+        {
+            if (p[j] > max_coordinates[j])  max_coordinates[j] = p[j];
+            if (p[j] < min_coordinates[j])  min_coordinates[j] = p[j];
+        }
+    }
+    int largest_dim = 0;
+    float largest_length = max_coordinates[0] - min_coordinates[0];
+    for (int i = 1; i < 3; i++) 
+    {
+        float diff = max_coordinates[i] - min_coordinates[i];
+        if (largest_length < diff)
+        {
+            largest_dim = i;
+            largest_length = diff;
+        }
+    }
+
+    int num_of_voxel_each_dim[3];
+    float res_of_voxel_each_dim[3];
+    num_of_voxel_each_dim[largest_dim] = (int)(sqrt(mesh_vertices.rows() * degreeSparseness) / 6.0);
+    res_of_voxel_each_dim[largest_dim] = (max_coordinates[largest_dim] - min_coordinates[largest_dim]) / num_of_voxel_each_dim[largest_dim];
+    for (int i = 0; i < 3; i++)
+    {
+        if (i != largest_dim) 
+        {
+            float diff = max_coordinates[i] - min_coordinates[i];
+            num_of_voxel_each_dim[i] = (int) diff / res_of_voxel_each_dim[largest_dim] + 2;
+            res_of_voxel_each_dim[i] = diff / num_of_voxel_each_dim[i];
+        }
+    }
+
+    // Calculation of the center of all voxels and the voxel grid points
+    std::vector<std::vector<std::vector<Eigen::Vector3d>>> centers;
+    std::vector<std::vector<std::vector<Eigen::Vector3d>>> voxel_pts;
+    voxels = BBVoxel{
+        min_coordinates,
+        centers,
+        voxel_pts,
+        {num_of_voxel_each_dim[0], num_of_voxel_each_dim[1], num_of_voxel_each_dim[2]},
+        {res_of_voxel_each_dim[0], res_of_voxel_each_dim[1], res_of_voxel_each_dim[2]},
+    };
+    double x, y, z, grid_x, grid_y, grid_z;
+    double delta[3] = { voxels.res_voxel[0] / 2.0, voxels.res_voxel[1] / 2.0, voxels.res_voxel[2] / 2.0};
+    for (int i = 0; i < voxels.n_voxel[0]; i++)
+    {
+        grid_x = voxels.start_pt[0] + voxels.res_voxel[0]*i;
+        x = grid_x + delta[0];
+        voxels.centers.push_back(std::vector<std::vector<Eigen::Vector3d>>());
+        voxels.voxel_pts.push_back(std::vector<std::vector<Eigen::Vector3d>>());
+        for (int j = 0; j < voxels.n_voxel[1]; j++)
+        {
+            grid_y = voxels.start_pt[1] + voxels.res_voxel[1]*j;
+            y = grid_y + delta[1];
+            voxels.centers[i].push_back(std::vector<Eigen::Vector3d>());
+            voxels.voxel_pts[i].push_back(std::vector<Eigen::Vector3d>());
+            for (int k = 0; k < voxels.n_voxel[2]; k++) 
+            {
+                grid_z = voxels.start_pt[2] + voxels.res_voxel[2]*k;
+                z = grid_z + delta[2];
+                Eigen::Vector3d center_p(x, y, z);
+                Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                voxels.centers[i][j].push_back(center_p);
+                voxels.voxel_pts[i][j].push_back(grid_pt);
+                if (k == voxels.n_voxel[2]-1) 
+                {
+                    grid_z += voxels.res_voxel[2];
+                    Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                    voxels.voxel_pts[i][j].push_back(grid_pt);
+                }
+            }
+            if (j == voxels.n_voxel[1]-1)
+            {
+                grid_y += voxels.res_voxel[1];
+                voxels.voxel_pts[i].push_back(std::vector<Eigen::Vector3d>());
+                for (int k = 0; k < voxels.n_voxel[2]; k++) 
+                {
+                    grid_z = voxels.start_pt[2] + voxels.res_voxel[2]*k;
+                    Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                    voxels.voxel_pts[i][j].push_back(grid_pt);
+                    if (k == voxels.n_voxel[2]-1) 
+                    {
+                        grid_z += voxels.res_voxel[2];
+                        Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                        voxels.voxel_pts[i][j].push_back(grid_pt);
+                    }
+                }   
+            }
+        }
+        if (i == voxels.n_voxel[0]-1)
+        {
+            grid_x += voxels.res_voxel[0];
+            voxels.voxel_pts.push_back(std::vector<std::vector<Eigen::Vector3d>>());
+            for (int j = 0; j < voxels.n_voxel[1]; j++)
+            {
+                grid_y = voxels.start_pt[1] + voxels.res_voxel[1]*j;
+                voxels.voxel_pts[i].push_back(std::vector<Eigen::Vector3d>());
+                for (int k = 0; k < voxels.n_voxel[2]; k++) 
+                {
+                    grid_z = voxels.start_pt[2] + voxels.res_voxel[2]*k;
+                    Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                    voxels.voxel_pts[i][j].push_back(grid_pt);
+                    if (k == voxels.n_voxel[2]-1) 
+                    {
+                        grid_z += voxels.res_voxel[2];
+                        Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                        voxels.voxel_pts[i][j].push_back(grid_pt);
+                    }
+                }
+                if (j == voxels.n_voxel[1]-1)
+                {
+                    grid_y += voxels.res_voxel[1];
+                    voxels.voxel_pts[i].push_back(std::vector<Eigen::Vector3d>());
+                    for (int k = 0; k < voxels.n_voxel[2]; k++) 
+                    {
+                        grid_z = voxels.start_pt[2] + voxels.res_voxel[2]*k;
+                        Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                        voxels.voxel_pts[i][j].push_back(grid_pt);
+                        if (k == voxels.n_voxel[2]-1) 
+                        {
+                            grid_z += voxels.res_voxel[2];
+                            Eigen::Vector3d grid_pt(grid_x, grid_y, grid_z);
+                            voxels.voxel_pts[i][j].push_back(grid_pt);
+                        }
+                    }   
+                }
+            }
+        }
+    }
+
+    std::cout << voxels.centers.size() << std::endl;
+    std::cout << voxels.centers[0].size() << std::endl;
+    std::cout << voxels.centers[0][0].size() << std::endl;
+    std::cout << voxels.centers.size()*voxels.centers[0].size()*voxels.centers[0][0].size() << std::endl;
+
+    std::cout << voxels.voxel_pts.size() << std::endl;
+    std::cout << voxels.voxel_pts[0].size() << std::endl;
+    std::cout << voxels.voxel_pts[0][0].size() << std::endl;
+    std::cout << voxels.voxel_pts.size()*voxels.voxel_pts[0].size()*voxels.voxel_pts[0][0].size() << std::endl;
+
+
 }
 
 void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
@@ -110,5 +255,6 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_ve
     computeBB(pca_based_mesh_vertices, cage_vertices, cage_faces, pca_basic_matrix, barycenter);
 
     // float sparse_factor = 0.3 // optinally user can define the sparse factor 
-    voxelizeBB(mesh_vertices, cage_vertices);
-};
+    BBVoxel voxels;
+    voxelizeBB(mesh_vertices, cage_vertices, voxels);
+}; 
