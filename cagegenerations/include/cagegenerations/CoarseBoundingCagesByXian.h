@@ -17,7 +17,15 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
 
 void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel& voxels, float degreeOfSparseness);
 
-void identifyFeatureVoxels(BBVoxel& voxels);
+void minMax(const double v0, const double v1, const double v2, double& min, double& max);
+bool planeBoxOverlap(const Eigen::Vector3d normal, const double d, const Eigen::Vector3d maxbox);
+bool axistest_x01(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+bool axistest_y02(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+bool axistest_z12(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+bool axistest_z0(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+bool axistest_x2(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+bool axistest_y1(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
+void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
-void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
+void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
 

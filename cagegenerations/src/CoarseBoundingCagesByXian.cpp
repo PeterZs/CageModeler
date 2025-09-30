@@ -234,19 +234,275 @@ void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cag
     }
 }
 
+void minMax(const double v0, const double v1, const double v2, double& min, double& max)
+{
+    min = max = v0;
+    if (v1 < min) min = v1;
+    if (v1 > max) max = v1;
+    if (v2 < min) min = v2;
+    if (v2 > max) max = v2;
+}
 
-void identifyFeatureVoxels(BBVoxel& voxels)
+
+bool planeBoxOverlap(const Eigen::Vector3d normal, const double d, const Eigen::Vector3d maxbox)
+{
+    Eigen::Vector3d vmin = Eigen::Vector3d::Zero(1,3);
+    Eigen::Vector3d vmax = Eigen::Vector3d::Zero(1,3);
+    for (int i = 0; i < 3; i++) 
+    {
+        if (normal[i] > 0.0) 
+        {
+            vmin[i] = -maxbox[i];
+            vmax[i] = maxbox[i];
+        } 
+        else 
+        {
+            vmin[i] = maxbox[i];
+            vmax[i] = -maxbox[i];
+        }
+    }
+    if (normal.dot(vmin)+d > 0.0) return false;
+    if (normal.dot(vmax)+d >= 0.0) return true;
+    return false;
+}
+
+
+bool axistest_x01(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p0 = a * v(0, 1) - b * v(0, 2);
+    double p2 = a * v(2, 1) - b * v(2, 2);
+    if (p0 < p2) 
+    {
+        min = p0;
+        max = p2;
+    }
+    else 
+    {
+        min = p2;
+        max = p0;
+    }
+    double rad = fa * halfbox[1] + fb * halfbox[2];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+bool axistest_y02(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p0 = -a * v(0, 0) + b * v(0, 2);
+    double p2 = -a * v(2, 0) + b * v(2, 2);
+    if (p0 < p2) 
+    {
+        min = p0;
+        max = p2;
+    }
+    else 
+    {
+        min = p2;
+        max = p0;
+    }
+    double rad = fa * halfbox[0] + fb * halfbox[2];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+bool axistest_z12(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p1 = a * v(1, 0) - b * v(1, 1);
+    double p2 = a * v(2, 0) - b * v(2, 1);
+    if (p2 < p1) 
+    {
+        min = p2;
+        max = p1;
+    }
+    else 
+    {
+        min = p1;
+        max = p2;
+    }
+    double rad = fa * halfbox[0] + fb * halfbox[1];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+bool axistest_z0(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p0 = a * v(0, 0) - b * v(0, 1);
+    double p1 = a * v(1, 0) - b * v(1, 1);
+    if (p0 < p1) 
+    {
+        min = p0;
+        max = p1;
+    }
+    else 
+    {
+        min = p1;
+        max = p0;
+    }
+    double rad = fa * halfbox[0] + fb * halfbox[1];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+bool axistest_x2(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p0 = a * v(0, 1) - b * v(0, 2);
+    double p1 = a * v(1, 1) - b * v(1, 2);
+    if (p0 < p1) 
+    {
+        min = p0;
+        max = p1;
+    }
+    else 
+    {
+        min = p1;
+        max = p0;
+    }
+    double rad = fa * halfbox[1] + fb * halfbox[2];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+bool axistest_y1(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
+{
+    double min, max;
+    double p0 = -a * v(0, 0) + b * v(0, 2);
+    double p1 = -a * v(1, 0) - b * v(1, 2);
+    if (p0 < p1) 
+    {
+        min = p0;
+        max = p1;
+    }
+    else 
+    {
+        min = p1;
+        max = p0;
+    }
+    double rad = fa * halfbox[0] + fb * halfbox[2];
+    if (min > rad || max < -rad) return false; 
+    return true;
+}
+
+
+// Use the Fast 3D Triangle-Box Overlap Testing to identify feature voxels
+void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces)
 {
     voxels.voxel_types.clear();
-    
+    Eigen::Matrix3d triangle = Eigen::Matrix3d::Zero(3, 3);
+    Eigen::Vector3d halfbox(voxels.res_voxel[0]/2, voxels.res_voxel[1]/2, voxels.res_voxel[2]/2);
 
+    int num_feature_voxels = 0;
+    
+    for (size_t k1 = 0; k1 < voxels.centers.size(); k1++) 
+    {
+        for (size_t k2 = 0; k2 < voxels.centers[k1].size(); k2++) 
+        {
+            for (size_t k3 = 0; k3 < voxels.centers[k1][k2].size(); k3++)
+            {
+                for (int i = 0; i < mesh_faces.rows(); i++)
+                {
+                    for (int j = 0; j < 3; j++) 
+                    {
+                        int idx = mesh_faces(i, j);
+                        triangle.row(j) = mesh_vertices.row(idx) - voxels.centers[k1][k2][k3].transpose();
+                    }
+                    // first test: Test the AABB against the minimal AABB around the triangle.
+                    double min, max;
+                    minMax(triangle(0, 0), triangle(1, 0), triangle(2, 0), min, max);
+                    if (min > halfbox[0] || max < -halfbox[0])
+                    {
+                        continue;
+                    }
+                    minMax(triangle(0, 1), triangle(1, 1), triangle(2, 1), min, max);
+                    if (min > halfbox[1] || max < -halfbox[1])
+                    {
+                        continue;
+                    }
+                    minMax(triangle(0, 2), triangle(1, 2), triangle(2, 2), min, max);
+                    if (min > halfbox[2] || max < -halfbox[2])
+                    {
+                        continue;
+                    }
+
+                    // second test: fast plane/AABB overlap test 
+                    Eigen::Vector3d e0 = triangle.row(1) - triangle.row(0);
+                    Eigen::Vector3d e1 = triangle.row(2) - triangle.row(1);
+                    Eigen::Vector3d normal = e0.cross(e1);
+                    double d = -normal.dot(triangle.row(0));
+
+                    if (!planeBoxOverlap(normal, d, halfbox)) 
+                    {
+                        continue;
+                    }
+
+                    // third test: crossproduct(edge from triangle, {x,y,z}-directin) 
+                    Eigen::Vector3d e2 = triangle.row(0) - triangle.row(2);
+
+                    Eigen::Vector3d abs = e0.cwiseAbs();
+                    if (!axistest_x01(e0[2], e0[1], abs[2], abs[1], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_y02(e0[2], e0[0], abs[2], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_z12(e0[1], e0[0], abs[1], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+
+                    abs = e1.cwiseAbs();
+                    if (!axistest_x01(e1[2], e1[1], abs[2], abs[1], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_y02(e1[2], e1[0], abs[2], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_z0(e1[1], e1[0], abs[1], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+
+                    abs = e2.cwiseAbs();
+                    if (!axistest_x2(e2[2], e2[1], abs[2], abs[1], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_y1(e2[2], e2[0], abs[2], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+                    if (!axistest_z12(e2[1], e2[0], abs[1], abs[0], triangle, halfbox)) 
+                    {
+                        continue;
+                    }
+
+                    num_feature_voxels++;
+                    break;
+                }
+                // break;
+            }
+            // break;
+        }
+        // break;
+    }
+
+    std::cout << "num features: " << num_feature_voxels << std::endl;
+    std::cout << "num voxels: " << (voxels.n_voxel[0]*voxels.n_voxel[1]*voxels.n_voxel[2]) << std::endl;
+    std::cout << (double)num_feature_voxels / (voxels.n_voxel[0]*voxels.n_voxel[1]*voxels.n_voxel[2]) << std::endl;
 }
 
 
 
-void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
+void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
 {   
-    
     Eigen::MatrixXd pca_basic_matrix;
     Eigen::MatrixXd pca_based_mesh_vertices;
     Eigen::Vector3d barycenter;
@@ -258,5 +514,5 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& cage_ve
     BBVoxel voxels;
     voxelizeBB(mesh_vertices, cage_vertices, voxels);
 
-    identifyFeatureVoxels(voxels);
+    identifyFeatureVoxels(voxels, mesh_vertices, mesh_faces);
 }; 
