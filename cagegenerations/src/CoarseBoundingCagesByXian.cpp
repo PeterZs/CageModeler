@@ -394,15 +394,16 @@ void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices
     voxels.voxel_types.clear();
     Eigen::Matrix3d triangle = Eigen::Matrix3d::Zero(3, 3);
     Eigen::Vector3d halfbox(voxels.res_voxel[0]/2, voxels.res_voxel[1]/2, voxels.res_voxel[2]/2);
-
-    int num_feature_voxels = 0;
     
     for (size_t k1 = 0; k1 < voxels.centers.size(); k1++) 
     {
+        voxels.voxel_types.push_back(std::vector<std::vector<int8_t>>());
         for (size_t k2 = 0; k2 < voxels.centers[k1].size(); k2++) 
         {
+            voxels.voxel_types[k1].push_back(std::vector<int8_t>());
             for (size_t k3 = 0; k3 < voxels.centers[k1][k2].size(); k3++)
             {
+                voxels.voxel_types[k1][k2].push_back(-1);
                 for (int i = 0; i < mesh_faces.rows(); i++)
                 {
                     for (int j = 0; j < 3; j++) 
@@ -484,7 +485,7 @@ void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices
                         continue;
                     }
 
-                    num_feature_voxels++;
+                    voxels.voxel_types[k1][k2][k3] = 0;
                     break;
                 }
                 // break;
@@ -493,12 +494,71 @@ void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices
         }
         // break;
     }
-
-    std::cout << "num features: " << num_feature_voxels << std::endl;
-    std::cout << "num voxels: " << (voxels.n_voxel[0]*voxels.n_voxel[1]*voxels.n_voxel[2]) << std::endl;
-    std::cout << (double)num_feature_voxels / (voxels.n_voxel[0]*voxels.n_voxel[1]*voxels.n_voxel[2]) << std::endl;
 }
 
+
+void renderFeatureVoxelHelper(BBVoxel voxels, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
+{
+    int num_of_voxels = voxels.n_voxel[0] * voxels.n_voxel[1] * voxels.n_voxel[2];
+    int num_of_feature_voxels = 0;
+    for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)  
+    {
+        for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++)
+        {
+            for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)
+            {
+                if (voxels.voxel_types[k1][k2][k3] == 0)    
+                {
+                    num_of_feature_voxels++;           
+                }   
+            }
+        }
+    }
+
+    // std::cout << "num features: " << num_of_feature_voxels << std::endl;
+    // std::cout << "num voxels: " << num_of_voxels << std::endl;
+    // std::cout << (double)num_of_feature_voxels / num_of_voxels << std::endl;
+
+    cage_vertices = Eigen::MatrixXd::Zero(num_of_feature_voxels * 8, 3);
+    cage_faces = Eigen::MatrixXi::Zero(num_of_feature_voxels * 12, 3);
+    int i = 0;
+    for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)  
+    {
+        for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++)
+        {
+            for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)
+            {
+                if (voxels.voxel_types[k1][k2][k3] == 0)    
+                {
+                    cage_vertices.row(0 + i*8) = voxels.voxel_pts[k1][k2][k3];
+                    cage_vertices.row(1 + i*8) = voxels.voxel_pts[k1][k2][k3+1];
+                    cage_vertices.row(2 + i*8) = voxels.voxel_pts[k1][k2+1][k3];
+                    cage_vertices.row(3 + i*8) = voxels.voxel_pts[k1][k2+1][k3+1];
+                    cage_vertices.row(4 + i*8) = voxels.voxel_pts[k1+1][k2][k3];
+                    cage_vertices.row(5 + i*8) = voxels.voxel_pts[k1+1][k2][k3+1];
+                    cage_vertices.row(6 + i*8) = voxels.voxel_pts[k1+1][k2+1][k3];
+                    cage_vertices.row(7 + i*8) = voxels.voxel_pts[k1+1][k2+1][k3+1];
+
+                    cage_faces.row(0 + i*12) = Eigen::Vector3i(0 + i*8, 1 + i*8, 2 + i*8);
+                    cage_faces.row(1 + i*12) = Eigen::Vector3i(1 + i*8, 3 + i*8, 2 + i*8);
+                    cage_faces.row(2 + i*12) = Eigen::Vector3i(4 + i*8, 6 + i*8, 5 + i*8);
+                    cage_faces.row(3 + i*12) = Eigen::Vector3i(5 + i*8, 6 + i*8, 7 + i*8);
+                    cage_faces.row(4 + i*12) = Eigen::Vector3i(0 + i*8, 4 + i*8, 2 + i*8);
+                    cage_faces.row(5 + i*12) = Eigen::Vector3i(2 + i*8, 4 + i*8, 6 + i*8);
+                    cage_faces.row(6 + i*12) = Eigen::Vector3i(1 + i*8, 3 + i*8, 5 + i*8);
+                    cage_faces.row(7 + i*12) = Eigen::Vector3i(3 + i*8, 7 + i*8, 5 + i*8);
+                    cage_faces.row(8 + i*12)  = Eigen::Vector3i(0 + i*8, 2 + i*8, 1 + i*8);
+                    cage_faces.row(9 + i*12)  = Eigen::Vector3i(1 + i*8, 2 + i*8, 3 + i*8);
+                    cage_faces.row(10 + i*12) = Eigen::Vector3i(4 + i*8, 5 + i*8, 6 + i*8);
+                    cage_faces.row(11 + i*12) = Eigen::Vector3i(5 + i*8, 7 + i*8, 6 + i*8);
+                                    
+                    i++;
+                }   
+            }
+        }
+    }
+
+}
 
 
 void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
@@ -515,4 +575,6 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
     voxelizeBB(mesh_vertices, cage_vertices, voxels);
 
     identifyFeatureVoxels(voxels, mesh_vertices, mesh_faces);
-}; 
+
+    renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);
+}
