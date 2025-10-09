@@ -27,5 +27,9 @@ bool axistest_x2(const double a, const double b, const double fa, const double f
 bool axistest_y1(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
 void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
+void identifyOuterVoxelsWithFillingAlgo(BBVoxel& voxels, const Eigen::Vector3i seed);
+
+void extractOuterSurface(BBVoxel& voxels);
+
 void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
 
