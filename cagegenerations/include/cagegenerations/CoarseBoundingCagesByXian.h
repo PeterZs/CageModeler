@@ -9,6 +9,8 @@ struct BBVoxel {
     int n_voxel[3];
     float res_voxel[3];
     std::vector<std::vector<std::vector<int8_t>>> voxel_types; // 0 = feature voxel, -1 = inner voxel, 1 = outer voxel
+    std::vector<int> non_manifold_vertices;
+    std::vector<Eigen::Vector3d> splitted_vertices;
 };
 
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter);
