@@ -13,7 +13,6 @@
 static const double EPSILON_BB = 0.15;
 static const float PREDEFINED_SPARSE_FACTOR = 0.5;
 
-
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter)
 {
     barycenter = mesh_vertices.colwise().mean(); // barycenter of mesh
@@ -675,6 +674,7 @@ void extractSingleFace(BBVoxel& voxels, std::vector<Eigen::Vector3i>& outer_face
 }
 
 
+
 void checkForNonManifoldFeatureVoxels(BBVoxel& voxels)
 {
     // for non manifold edge, simply perform voxel attaching
@@ -802,12 +802,33 @@ void checkForNonManifoldFeatureVoxels(BBVoxel& voxels)
                 int i1 = k1 - 1;
                 int i2 = k2 - 1;
                 int i3 = k3 - 1;
+                int j1 = k1 + 1;
+                int j2 = k2 + 1;
+                int j3 = k3 + 1;
                 if (i1 >= 0 && i2 >= 0 && i3 >= 0 && voxels.voxel_types[i1][i2][i3] == 0 && voxels.voxel_types[i1][k2][k3] != 0 && voxels.voxel_types[k1][i2][k3] != 0 && voxels.voxel_types[k1][k2][i3] != 0)
                 {
                     int non_manifold_vertex = k1 + k2 * num_voxel_pts_dim_0 + k3 * num_voxel_pts_dim_0 * num_voxel_pts_dim_1;
                     voxels.non_manifold_vertices.push_back(non_manifold_vertex);
                     voxels.splitted_vertices.push_back(voxels.voxel_pts[k1][k2][k3]);
+                }
+                if (j1 < voxels.n_voxel[0] && i2 >= 0 && i3 >= 0 && voxels.voxel_types[j1][i2][i3] == 0 && voxels.voxel_types[j1][k2][k3] != 0 && voxels.voxel_types[k1][i2][k3] != 0 && voxels.voxel_types[k1][k2][i3] != 0)
+                {
+                    int non_manifold_vertex = (k1+1) + k2 * num_voxel_pts_dim_0 + k3 * num_voxel_pts_dim_0 * num_voxel_pts_dim_1;
+                    voxels.non_manifold_vertices.push_back(non_manifold_vertex);
+                    voxels.splitted_vertices.push_back(voxels.voxel_pts[k1+1][k2][k3]);
                 }   
+                if (i1 >= 0 && j2 < voxels.n_voxel[1] && i3 >= 0 && voxels.voxel_types[i1][j2][i3] == 0 && voxels.voxel_types[i1][k2][k3] != 0 && voxels.voxel_types[k1][j2][k3] != 0 && voxels.voxel_types[k1][k2][i3] != 0)
+                {
+                    int non_manifold_vertex = k1 + (k2+1) * num_voxel_pts_dim_0 + k3 * num_voxel_pts_dim_0 * num_voxel_pts_dim_1;
+                    voxels.non_manifold_vertices.push_back(non_manifold_vertex);
+                    voxels.splitted_vertices.push_back(voxels.voxel_pts[k1][k2+1][k3]);
+                }
+                if (i1 >= 0 && i2 >= 0 && j3 >= 0 && voxels.voxel_types[i1][i2][j3] == 0 && voxels.voxel_types[i1][k2][k3] != 0 && voxels.voxel_types[k1][i2][k3] != 0 && voxels.voxel_types[k1][k2][j3] != 0)
+                {
+                    int non_manifold_vertex = k1 + k2 * num_voxel_pts_dim_0 + (k3+1) * num_voxel_pts_dim_0 * num_voxel_pts_dim_1;
+                    voxels.non_manifold_vertices.push_back(non_manifold_vertex);
+                    voxels.splitted_vertices.push_back(voxels.voxel_pts[k1][k2][k3+1]);
+                }
             }
         }
     }
@@ -823,10 +844,13 @@ void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen:
     std::vector<Eigen::Vector3i> outer_faces;
     std::vector<int> outer_vertices;
     int vertex_id = 0;
-    int v0, v1, v2, v3;
 
     int num_voxel_dim_0 = voxels.voxel_pts.size();
     int num_voxel_dim_1 = voxels.voxel_pts[0].size();
+
+    int num_of_all_voxel_pts = voxels.voxel_pts.size() * voxels.voxel_pts[0].size() * voxels.voxel_pts[0][0].size(); 
+
+    std::vector<bool> non_manifold_vertex_is_splitted(voxels.non_manifold_vertices.size(), false);  
 
     for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)  
     {
@@ -839,90 +863,95 @@ void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen:
                     continue;
                 }   
                 // only extract if given voxel is a feature voxel
-                v0 = k1 + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = k1 + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = k1 + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = k1 + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
+                int voxel_vertices[8] = {
+                    k1 + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1,
+                    k1 + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1,
+                    k1 + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1,
+                    k1 + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1,
+                    (k1+1) + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1,
+                    (k1+1) + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1,
+                    (k1+1) + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1,
+                    (k1+1) + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1
+                };
+                for (int i = 0; i < 8; i++)
+                {
+                    for (int j = 0; j < voxels.non_manifold_vertices.size(); j++) 
+                    {
+                        if (voxel_vertices[i] == voxels.non_manifold_vertices[j] && !non_manifold_vertex_is_splitted[j])
+                        {
+                            voxel_vertices[i] = num_of_all_voxel_pts + j;
+                            non_manifold_vertex_is_splitted[j] = true;
+                            continue;
+                        }
+                    }
+                }
+
                 if (k1 == 0) // edge --> extract the outer surface
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[0], voxel_vertices[2], voxel_vertices[1], voxel_vertices[3]);
                 } 
                 else if (voxels.voxel_types[k1-1][k2][k3] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[0], voxel_vertices[2], voxel_vertices[1], voxel_vertices[3]);
                 }
-                v0 = k1 + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = (k1+1) + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = (k1+1) + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = k1 + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
                 if (k2 == 0)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v1, v0, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[4], voxel_vertices[0], voxel_vertices[5], voxel_vertices[1]);
                 }
                 else if (voxels.voxel_types[k1][k2-1][k3] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v1, v0, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[4], voxel_vertices[0], voxel_vertices[5], voxel_vertices[1]);
                 }
-                v0 = k1 + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = (k1+1) + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = (k1+1) + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = k1 + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
                 if (k3 == 0)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v3, v2);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[0], voxel_vertices[4], voxel_vertices[2], voxel_vertices[6]);
                 }
                 else if (voxels.voxel_types[k1][k2][k3-1] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v3, v2);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[0], voxel_vertices[4], voxel_vertices[2], voxel_vertices[6]);
                 }
-                v0 = (k1+1) + k2 * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = (k1+1) + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = (k1+1) + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = (k1+1) + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
                 if (k1 == voxels.n_voxel[0]-1) // edge --> extract the outer surface
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v2, v1, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[4], voxel_vertices[5], voxel_vertices[6], voxel_vertices[7]);
                 } 
                 else if (voxels.voxel_types[k1+1][k2][k3] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v2, v1, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[4], voxel_vertices[5], voxel_vertices[6], voxel_vertices[7]);
                 }
-                v0 = k1 + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = (k1+1) + (k2+1) * num_voxel_dim_0 + k3 * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = (k1+1) + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = k1 + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
                 if (k2 == voxels.n_voxel[1]-1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v3, v2);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[2], voxel_vertices[6], voxel_vertices[3], voxel_vertices[7]);
                 }
                 else if (voxels.voxel_types[k1][k2+1][k3] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v0, v1, v3, v2);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[2], voxel_vertices[6], voxel_vertices[3], voxel_vertices[7]);
                 }
-                v0 = k1 + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v1 = (k1+1) + k2 * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v2 = (k1+1) + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
-                v3 = k1 + (k2+1) * num_voxel_dim_0 + (k3+1) * num_voxel_dim_0 * num_voxel_dim_1;
                 if (k3 == voxels.n_voxel[2]-1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v1, v0, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[5], voxel_vertices[1], voxel_vertices[7], voxel_vertices[3]);
                 }
                 else if (voxels.voxel_types[k1][k2][k3+1] == 1)
                 {
-                    extractSingleFace(voxels, outer_faces, outer_vertices, v1, v0, v2, v3);
+                    extractSingleFace(voxels, outer_faces, outer_vertices, voxel_vertices[5], voxel_vertices[1], voxel_vertices[7], voxel_vertices[3]);
                 }
             }
         }
     }    
 
-
     cage_vertices = Eigen::MatrixXd::Zero(outer_vertices.size(), 3);
     for (size_t i = 0; i < outer_vertices.size(); i++)
     {
-        int k1 = outer_vertices[i] % voxels.voxel_pts.size();
-        int k2 = (outer_vertices[i] / voxels.voxel_pts.size()) % voxels.voxel_pts[0].size();
-        int k3 = outer_vertices[i] / (voxels.voxel_pts.size() * voxels.voxel_pts[0].size());
-        cage_vertices.row(i) = voxels.voxel_pts[k1][k2][k3];
+        if (outer_vertices[i] >= num_of_all_voxel_pts)
+        {
+            cage_vertices.row(i) = voxels.splitted_vertices[outer_vertices[i] - num_of_all_voxel_pts];
+        }
+        else 
+        {
+            int k1 = outer_vertices[i] % voxels.voxel_pts.size();
+            int k2 = (outer_vertices[i] / voxels.voxel_pts.size()) % voxels.voxel_pts[0].size();
+            int k3 = outer_vertices[i] / (voxels.voxel_pts.size() * voxels.voxel_pts[0].size());
+            cage_vertices.row(i) = voxels.voxel_pts[k1][k2][k3];
+        }
     }
     cage_faces = Eigen::MatrixXi::Zero(outer_faces.size(), 3);
     for (size_t i = 0; i < outer_faces.size(); i++)
@@ -989,37 +1018,32 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
     bb.start_pt[0] = bb.start_pt[0] + 40.;
     bb.start_pt[1] = bb.start_pt[1] + 40.;
     bb.start_pt[2] = bb.start_pt[2] + 40.;
-    bb.n_voxel[0] = 2;
-    bb.n_voxel[1] = 2;
-    bb.n_voxel[2] = 2;
+    bb.n_voxel[0] = 3;
+    bb.n_voxel[1] = 3;
+    bb.n_voxel[2] = 3;
     bb.res_voxel[0] = 8.;
     bb.res_voxel[1] = 8.;
     bb.res_voxel[2] = 8.;
 
     bb.centers = std::vector<std::vector<std::vector<Eigen::Vector3d>>>(
-        2, std::vector<std::vector<Eigen::Vector3d>>(
-            2, std::vector<Eigen::Vector3d>(2, Eigen::Vector3d(0.0,0.0,0.0))
+        3, std::vector<std::vector<Eigen::Vector3d>>(
+            3, std::vector<Eigen::Vector3d>(3, Eigen::Vector3d(0.0,0.0,0.0))
         )
     );
 
     bb.voxel_types = std::vector<std::vector<std::vector<int8_t>>>(
-        2, std::vector<std::vector<int8_t>>(
-            2, std::vector<int8_t>(2, 0)
+        3, std::vector<std::vector<int8_t>>(
+            3, std::vector<int8_t>(3, 1)
         )
     );
-    bb.voxel_types[0][0][0] = 0;
-    bb.voxel_types[0][0][1] = 1;
-    bb.voxel_types[0][1][0] = 1;
-    bb.voxel_types[0][1][1] = 1;
-    bb.voxel_types[1][0][0] = 1;
-    bb.voxel_types[1][0][1] = 1;
-    bb.voxel_types[1][1][0] = 1;
+    bb.voxel_types[2][0][0] = 0;
     bb.voxel_types[1][1][1] = 0;
+    bb.voxel_types[0][0][2] = 0;
 
 
     bb.voxel_pts = std::vector<std::vector<std::vector<Eigen::Vector3d>>>(
-        3, std::vector<std::vector<Eigen::Vector3d>>(
-            3, std::vector<Eigen::Vector3d>(3, Eigen::Vector3d(0.0,0.0,0.0))
+        4, std::vector<std::vector<Eigen::Vector3d>>(
+            4, std::vector<Eigen::Vector3d>(4, Eigen::Vector3d(0.0,0.0,0.0))
         )
     );
     for (int k3 = 0; k3 < bb.n_voxel[2]+1; k3++)
@@ -1035,11 +1059,23 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
             }
         }
     }
-
+    for (int k3 = 0; k3 < bb.n_voxel[2]; k3++)
+    {
+        for (int k2 = 0; k2 < bb.n_voxel[1]; k2++) 
+        {
+            for (int k1 = 0; k1 < bb.n_voxel[0]; k1++)
+            {
+                double x = bb.start_pt[0] + (double)(k1+0.5) * bb.res_voxel[0];
+                double y = bb.start_pt[1] + (double)(k2+0.5) * bb.res_voxel[1];
+                double z = bb.start_pt[2] + (double)(k3+0.5) * bb.res_voxel[2];
+                bb.centers[k1][k2][k3] = Eigen::Vector3d(x,y,z);
+            }
+        }
+    }
     
 
 
-    extractOuterSurface(bb, cage_vertices, cage_faces);
+    // extractOuterSurface(bb, cage_vertices, cage_faces);
 
 
 
@@ -1049,7 +1085,7 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     //////////////////////////
 
-    // extractOuterSurface(voxels, cage_vertices, cage_faces);
+    extractOuterSurface(voxels, cage_vertices, cage_faces);
 
     // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);
 }
