@@ -4,6 +4,12 @@
 
 #include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
+#include <Eigen/Sparse>
+
+#include <igl/readPLY.h>
+#include <igl/cotmatrix.h>
+#include <igl/ray_mesh_intersect.h>
+#include <igl/Hit.h>
 
 #include <limits>
 #include <set>
@@ -960,6 +966,42 @@ void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen:
     }
 }
 
+void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, float lambda_smooth, int it_smooth, Eigen::MatrixXd& pca_based_mesh_vertices, const Eigen::MatrixXi& mesh_faces)
+{
+    Eigen::SparseMatrix<double> laplace_beltrami_matrix_;
+    igl::cotmatrix(cage_vertices,cage_faces,laplace_beltrami_matrix_);
+    Eigen::MatrixXd cage_vertices_prev = cage_vertices;
+    Eigen::MatrixXd cage_vertices_smooth = cage_vertices;
+    Eigen::SparseMatrix<double> S(cage_vertices.rows(), cage_vertices.rows());
+    S.setIdentity();
+    Eigen::BiCGSTAB< Eigen::SparseMatrix<double> > solverImpl;
+    S = S - lambda_smooth * laplace_beltrami_matrix_;
+    solverImpl.compute(S);
+
+    Eigen::Vector3d s, dir, dir_norm;
+    std::vector<igl::Hit<double>> hits; 
+    const double delta_T = 0.5;
+    for (int i = 0; i < 2; i++){
+        cage_vertices_smooth =  solverImpl.solve(cage_vertices_prev);
+        // Test for intersection with the mesh
+
+        for (int j = 0; j < cage_vertices.rows(); j++) {
+            hits.clear();
+            s = cage_vertices_prev.row(j);
+            dir = cage_vertices_smooth.row(j) - cage_vertices_prev.row(j);
+            dir_norm = dir.normalized();
+            if (igl::ray_mesh_intersect(s,dir_norm,pca_based_mesh_vertices,mesh_faces,hits) || igl::ray_mesh_intersect(s,-dir_norm,pca_based_mesh_vertices,mesh_faces,hits)){
+                if (hits[0].t < dir.norm()) {
+                    cage_vertices_smooth.row(j) = Eigen::Vector3d(cage_vertices_prev.row(j)) + delta_T * hits[0].t * dir_norm;
+                }
+            }
+        }
+        cage_vertices_prev = cage_vertices_smooth;
+    }
+
+    cage_vertices = cage_vertices_smooth;   
+}
+
 
 void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
 {   
@@ -1086,6 +1128,10 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
     //////////////////////////
 
     extractOuterSurface(voxels, cage_vertices, cage_faces);
+
+    float lambda_smooth = .6;
+    int num_it = 20;
+    smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
 
     // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);
 }

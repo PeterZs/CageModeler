@@ -46,7 +46,6 @@ else()
     find_package(LAPACK REQUIRED)
 endif()
 
-
 # Additional dependencies required for the library.
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/LBC" LBCLib)
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/libigl" libIGL)

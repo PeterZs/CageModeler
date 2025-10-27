@@ -13,6 +13,15 @@ struct BBVoxel {
     std::vector<Eigen::Vector3d> splitted_vertices;
 };
 
+// struct Hit
+// {
+//     double t;                  
+//     Eigen::Vector3d position;  
+//     Eigen::Vector3d normal;    
+//     int face_id;               
+// };
+
+
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter);
 
 void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const Eigen::MatrixXd& pca_basic_matrix, const Eigen::Vector3d& barycenter);
@@ -32,6 +41,8 @@ void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices
 void identifyOuterVoxelsWithFillingAlgo(BBVoxel& voxels, const Eigen::Vector3i seed);
 
 void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
+
+void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, float lambda_smooth, int it_smooth, Eigen::MatrixXd& pca_based_mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
 void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
 
