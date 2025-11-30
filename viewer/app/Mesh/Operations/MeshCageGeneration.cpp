@@ -12,8 +12,7 @@ MeshCageGeneration::ExecutionResult MeshCageGeneration::Execute()
     generateCage(_params._mesh._vertices, _params._mesh._faces, _params._cage._vertices, _params._cage._faces);
 
     MeshCageGenerationResult result;
-    result._cage_faces = std::move(_params._cage._faces);
-    result._cage_vertices = std::move(_params._cage._vertices);
+    result._cage = std::move(_params._cage);
 
     return result;
 }

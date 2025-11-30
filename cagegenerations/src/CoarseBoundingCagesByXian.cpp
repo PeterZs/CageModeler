@@ -582,6 +582,25 @@ void renderFeatureVoxelHelper(BBVoxel voxels, Eigen::MatrixXd& cage_vertices, Ei
 }
 
 
+void identifyOuterVoxels(BBVoxel& voxels)
+{
+    for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)
+    {
+        for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++) 
+        {
+            for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)
+            {
+                if (k3 == 0 || k2 == 0 || k1 == 0 || k3 == voxels.n_voxel[2]-1 || k2 == voxels.n_voxel[1]-1 || k1 == voxels.n_voxel[0]-1)
+                {
+                    Eigen::Vector3i seed(k1, k2, k3);
+                    identifyOuterVoxelsWithFillingAlgo(voxels, seed);
+                }
+            }
+        }
+    }
+}
+
+
 void identifyOuterVoxelsWithFillingAlgo(BBVoxel& voxels, const Eigen::Vector3i seed)
 {
     if (voxels.voxel_types[seed[0]][seed[1]][seed[2]] == 0 || voxels.voxel_types[seed[0]][seed[1]][seed[2]] == 1)
@@ -1012,47 +1031,16 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     computeBB(pca_based_mesh_vertices, cage_vertices, cage_faces, pca_basic_matrix, barycenter);
 
-    float sparse_factor = 0.5; // optinally user can define the sparse factor 
+    float sparse_factor = 0.2; // optinally user can define the sparse factor 
     BBVoxel voxels;
     voxelizeBB(mesh_vertices, cage_vertices, voxels, sparse_factor);
 
     identifyFeatureVoxels(voxels, mesh_vertices, mesh_faces);
 
-    identifyOuterVoxelsWithFillingAlgo(voxels, Eigen::Vector3i::Zero(1,3));
+    identifyOuterVoxels(voxels);
+    // identifyOuterVoxelsWithFillingAlgo(voxels, Eigen::Vector3i::Zero(1,3));
 
     ///////////////////////
-
-
-    // for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)  
-    // {
-    //     for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++)
-    //     {
-    //         for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)
-    //         {
-    //             if (voxels.voxel_types[k1][k2][k3] != 0)
-    //             {
-    //                 continue;
-    //             }
-    //             int i1 = k1 - 1;
-    //             int i2 = k2 - 1;
-    //             int i3 = k3 - 1;
-    //             if (i1 >= 0 && i2 >= 0 && voxels.voxel_types[i1][i2][k3] == 0)//&& voxels.voxel_types[i1][k2][k3] != 0 && voxels.voxel_types[k1][i2][k3] != 0)
-    //             {
-    //                 if(voxels.voxel_types[i1][k2][k3] != 0 && voxels.voxel_types[k1][i2][k3] == 0) 
-    //                 {
-    //                     std::cout << "A" << std::endl;
-    //                     int t = voxels.voxel_types[i1][k2][k3];
-    //                     std::cout << t << std::endl;
-    //                     voxels.voxel_types[k1][i2][k3] = -1;
-    //                     k1 = voxels.n_voxel[0];
-    //                     k2 = voxels.n_voxel[1];
-    //                     k3 = voxels.n_voxel[2];
-    //                 }
-    //             }
-
-    //         }
-    //     }
-    // }
 
     BBVoxel bb;
 
@@ -1129,9 +1117,11 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     extractOuterSurface(voxels, cage_vertices, cage_faces);
 
-    float lambda_smooth = .6;
+    float lambda_smooth = .2;
     int num_it = 20;
     smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
 
     // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);
+
+    
 }

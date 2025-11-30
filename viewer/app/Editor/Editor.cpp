@@ -524,10 +524,42 @@ void Editor::OnNewCageCreated()
 		const auto mesh = _scene->GetMesh(_deformedMeshHandle);
 		mesh->SetModelMatrix(newModelMatrix);
 
-		_deformedCageHandle = _scene->AddCage(result.GetValue()._cage_vertices, result.GetValue()._cage_faces);
+		_deformedCageHandle = _scene->AddCage(result.GetValue()._cage._vertices, result.GetValue()._cage._faces);
 		const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
 		cageMesh->SetModelMatrix(newModelMatrix);
 
+		_isComputingWeightsData.store(true, std::memory_order_seq_cst);
+		
+		// std::cout << "deformationtype:  " << DeformationTypeHelpers::DeformationTypeToString(_projectData->_deformationType, _projectData->_LBCWeightingScheme) << std::endl;
+
+		// std::cout << _projectData->_cagePoints.rows() << "  " << _projectData->_cagePoints.cols() << std::endl;
+		// std::cout << _projectData->_cagePoints(0,0) << std::endl;
+		// std::cout << _projectData->_cagePoints(1,0) << std::endl;
+		// std::cout << _projectData->_cagePoints(2,0) << std::endl;
+		// std::cout << _projectData->_cagePoints(3,0) << std::endl;
+		// std::cout << _projectData->_cage._faces.rows() << "  " << _projectData->_cage._faces.cols() << std::endl;
+		// std::cout << _projectData->_normals.rows() << "  " << _projectData->_normals.cols() << std::endl;
+
+		// std::cout << "b: " << _projectData->_b.rows() << "  " << _projectData->_b.cols() << std::endl;
+		// std::cout << "bc: " << _projectData->_bc.rows() << "  " << _projectData->_bc.cols() << std::endl;
+
+		
+
+
+		// Example - calculate new MVC
+		_projectData->_deformationType = DeformationType::MVC;
+		_projectData->_cage = result.GetValue()._cage;
+
+		auto weightsResult = ComputeCageWeights(*_projectData);
+
+		_weightsData.Update(std::move(weightsResult.GetValue()._skinningMatrix),
+			std::move(weightsResult.GetValue()._weights),
+			std::move(weightsResult.GetValue()._interpolatedWeights),
+			std::move(weightsResult.GetValue()._psi),
+			std::move(weightsResult.GetValue()._psiTri),
+			std::move(weightsResult.GetValue()._psiQuad));
+
+		_isComputingWeightsData.store(false, std::memory_order_seq_cst);
 	});
 
 	
