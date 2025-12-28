@@ -576,6 +576,8 @@ void Editor::OnNewCageCreated()
 
 void Editor::OnNewProjectCreated()
 {
+	std::cout << "OnNewProjectCreate" << std::endl;
+
 	if (_projectModel->CheckMissingFiles())
 	{
 		_statusBar->SetError("Unable to load all files, check if some of them are missing.");
@@ -587,16 +589,23 @@ void Editor::OnNewProjectCreated()
 	{
 		_isComputingWeightsData.store(true, std::memory_order_seq_cst);
 
+		std::cout << "pkpk" << std::endl;
+
 		// Update _projectModel if user creates a new project
 		if(_newProjectPanel != nullptr) {
 			auto _panelModel = _newProjectPanel->GetModel();
 			_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
 		}
+
+		std::cout << "123123" << std::endl;
 			
 		auto projectResult = CreateProject();
 
+		std::cout << "123adadsasd123" << std::endl;
+
 		if (projectResult.HasError())
 		{
+			std::cout << "error" << std::endl;
 			// Update the status with an error.
 			_mainThreadQueue->Push([this, error = std::move(projectResult.GetError())]() mutable
 			{
@@ -606,11 +615,14 @@ void Editor::OnNewProjectCreated()
 			return;
 		}
 
+		std::cout << "asdasdasd" << std::endl;
+
 		// Compute the weights, but do it off the main thread, because it's the most expensive operation.
 		auto weightsResult = ComputeCageWeights(*projectResult.GetValue());
 
 		if (weightsResult.HasError())
 		{
+			std::cout << "error" << std::endl;
 			// Update the status with an error.
 			_mainThreadQueue->Push([this, error = std::move(weightsResult.GetError())]() mutable
 			{
@@ -1321,7 +1333,7 @@ MeshOperationResult<std::shared_ptr<ProjectData>> Editor::CreateProject() const
 		_projectModel->_deformationType,
 		_projectModel->_LBCWeightingScheme,
 		_projectModel->_meshFilepath.value(),
-		_projectModel->_cageFilepath.value(),
+		_projectModel->_cageFilepath.value_or(std::filesystem::path()),
 		_projectModel->_deformedCageFilepath,
 		_projectModel->_weightsFilepath,
 		_projectModel->_embeddingFilepath,

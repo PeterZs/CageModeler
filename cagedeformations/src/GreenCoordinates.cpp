@@ -1111,6 +1111,7 @@ void computeMVCForOneVertexSimple(Eigen::MatrixXd const & C, Eigen::MatrixXi con
 	}
 }
 
+
 void computeMVC(const Eigen::MatrixXd& C, const Eigen::MatrixXi& CF, Eigen::MatrixXd const& eta_m,
     Eigen::MatrixXd& phi) {
 		phi.resize(C.rows(), eta_m.rows());
@@ -1122,7 +1123,7 @@ void computeMVC(const Eigen::MatrixXd& C, const Eigen::MatrixXi& CF, Eigen::Matr
 			const Eigen::Vector3d eta = eta_m.row(eta_idx);
 			computeMVCForOneVertexSimple(C, CF, eta, weights, w_weights);
 			phi.col(eta_idx) = weights;
-		}
+		}		
 }
 
 double getSpanDeterminant(Eigen::Vector3d const& v1, Eigen::Vector3d const& v2, Eigen::Vector3d const& v3) {

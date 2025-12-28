@@ -382,12 +382,15 @@ void NewProjectPanel::Layout()
 
 		ImGui::SameLine();
 
-		const auto hasNoMesh = !_model->_meshFilepath.has_value() || !_model->_cageFilepath.has_value();
-		const auto hasNoCage = !_model->_cageFilepath.has_value();
-		const auto hasNoEmbedding = (DeformationTypeHelpers::RequiresEmbedding(_model->_deformationType) && !_model->_embeddingFilepath.has_value());
+		const auto meshMissing = !_model->_meshFilepath.has_value();
+		const auto embeddingMissing = (DeformationTypeHelpers::RequiresEmbedding(_model->_deformationType) && !_model->_embeddingFilepath.has_value());
+
+		// const auto hasNoMesh = !_model->_meshFilepath.has_value() || !_model->_cageFilepath.has_value();
+		// const auto hasNoCage = !_model->_cageFilepath.has_value();
+		// const auto hasNoEmbedding = (DeformationTypeHelpers::RequiresEmbedding(_model->_deformationType) && !_model->_embeddingFilepath.has_value());
 
 		// Create the new project.
-		ImGui::BeginDisabled(hasNoMesh || hasNoCage || hasNoEmbedding || hasRunningOperation);
+		ImGui::BeginDisabled(meshMissing || embeddingMissing || hasRunningOperation);
 		{
 			if (ImGui::Button("Create", buttonSize))
 			{
