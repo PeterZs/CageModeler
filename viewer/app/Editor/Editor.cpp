@@ -508,6 +508,12 @@ void Editor::OnNewCageCreated()
 
 	_threadPool->Submit([this](){
 
+		// Update _projectModel if user creates a new project
+		// if(_newCagePanel != nullptr) {
+		// 	auto _panelModel = _newCagePanel->GetModel();
+		// 	_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
+		// }
+
 		auto result = GenerateCage(*_projectData);	
 
 		if (result.HasError())
@@ -543,8 +549,6 @@ void Editor::OnNewCageCreated()
 		// std::cout << "b: " << _projectData->_b.rows() << "  " << _projectData->_b.cols() << std::endl;
 		// std::cout << "bc: " << _projectData->_bc.rows() << "  " << _projectData->_bc.cols() << std::endl;
 
-		
-
 
 		// Example - calculate new MVC
 		_projectData->_deformationType = DeformationType::MVC;
@@ -560,24 +564,60 @@ void Editor::OnNewCageCreated()
 			std::move(weightsResult.GetValue()._psiQuad));
 
 		_isComputingWeightsData.store(false, std::memory_order_seq_cst);
+
+
+
+		// We only recompute the vertex colors if they were previously on.
+		// const auto renderInfluenceMap = _projectModel->CanRenderInfluenceMap();
+		// if (renderInfluenceMap)
+		// {
+		// 	UpdateMeshVertexColors(renderInfluenceMap);
+		// }
+
+		// // Update the settings panel.
+		// _projectOptionsPanel->SetDeformableMesh(_scene->GetMesh(_deformedMeshHandle));
+		// _projectOptionsPanel->SetCageMesh(_scene->GetMesh(_deformedCageHandle));
+
+		// // Update the mesh and the cage. We do this only once to compute the weights and any other operation is executed simply on the deformed cage.
+		// _toolBar->SetModel(std::make_shared<ToolBarModel>(_projectData));
+
+		// // Update the status bar to display the new meshes.
+		// _statusBar->SetModel(std::make_shared<StatusBarModel>(_projectData,
+		// 	[this]<typename T>(T&& selectionType) { OnSelectionTypeChanged(std::forward<T>(selectionType)); },
+		// 	[this](const uint32_t newFrameIndex) { OnSequencerFrameIndexChanged(newFrameIndex); },
+		// 	[this](const uint32_t frameIndex, const uint32_t numFrames) { OnSequencerNumFramesChanged(frameIndex, numFrames); },
+		// 	[this]() { OnSequencerStartedDragging(); },
+		// 	[this]() { OnSequencerEndedDragging(); }));
+
+		// // Updates the vertex data with the last sample.
+		// UpdateDeformedMeshPositionsFromDeformationData();
+
+		// // Rebuild the entire BVH.
+		// {
+		// 	auto bvhBuilder = _scene->BeginGeometryBVH();
+		// 	bvhBuilder.AddGeometry(_deformedMeshHandle);
+		// 	bvhBuilder.AddGeometry(_deformedCageHandle);
+		// }
+		
+		
+
+		if (_newCagePanel != nullptr)
+		{
+			_newCagePanel->Dismiss();
+			_newCagePanel = nullptr;
+		}
 	});
 
-	
-	
 
-	if (_newCagePanel != nullptr)
-	{
-		_newCagePanel->Dismiss();
-		_newCagePanel = nullptr;
-	}
+
+
+	
 
 	return;
 }
 
 void Editor::OnNewProjectCreated()
 {
-	std::cout << "OnNewProjectCreate" << std::endl;
-
 	if (_projectModel->CheckMissingFiles())
 	{
 		_statusBar->SetError("Unable to load all files, check if some of them are missing.");
@@ -589,19 +629,13 @@ void Editor::OnNewProjectCreated()
 	{
 		_isComputingWeightsData.store(true, std::memory_order_seq_cst);
 
-		std::cout << "pkpk" << std::endl;
-
 		// Update _projectModel if user creates a new project
 		if(_newProjectPanel != nullptr) {
 			auto _panelModel = _newProjectPanel->GetModel();
 			_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
 		}
 
-		std::cout << "123123" << std::endl;
-			
 		auto projectResult = CreateProject();
-
-		std::cout << "123adadsasd123" << std::endl;
 
 		if (projectResult.HasError())
 		{
@@ -614,8 +648,6 @@ void Editor::OnNewProjectCreated()
 
 			return;
 		}
-
-		std::cout << "asdasdasd" << std::endl;
 
 		// Compute the weights, but do it off the main thread, because it's the most expensive operation.
 		auto weightsResult = ComputeCageWeights(*projectResult.GetValue());

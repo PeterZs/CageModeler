@@ -694,8 +694,10 @@ void extractSingleFace(BBVoxel& voxels, std::vector<Eigen::Vector3i>& outer_face
         i3 = outer_vertices.size();
         outer_vertices.push_back(v3);
     }
-    outer_faces.push_back(Eigen::Vector3i(i0, i1, i2));
-    outer_faces.push_back(Eigen::Vector3i(i2, i1, i3));
+    // outer_faces.push_back(Eigen::Vector3i(i0, i1, i2));
+    // outer_faces.push_back(Eigen::Vector3i(i2, i1, i3));
+    outer_faces.push_back(Eigen::Vector3i(i0, i2, i1));
+    outer_faces.push_back(Eigen::Vector3i(i1, i2, i3));
 }
 
 
@@ -1121,7 +1123,6 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
     int num_it = 20;
     smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
 
-    // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);
 
-    
+    // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);   
 }

@@ -116,18 +116,12 @@ MeshComputeWeightsOperation::ExecutionResult MeshComputeWeightsOperation::Execut
 	}
 	else if (_params._deformationType == DeformationType::Green)
 	{
-		std::cout << "QMVC for GC?" << std::endl;
-
-		std::cout << _params._mesh._vertices(20, 0) << "  " << _params._mesh._vertices(20, 1) << "  " << _params._mesh._vertices(20, 2) << std::endl;
-
 		calculateGreenCoordinatesFromQMVC(_params._cage._vertices,
 			_params._cage._faces,
 			_params._normals,
 			_params._mesh._vertices,
 			weights,
 			psi);
-		
-		std::cout << _params._mesh._vertices(20, 0) << "  " << _params._mesh._vertices(20, 1) << "  " << _params._mesh._vertices(20, 2) << std::endl;
 	}
 	else if (_params._deformationType == DeformationType::QGC)
 	{

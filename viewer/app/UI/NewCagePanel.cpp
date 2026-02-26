@@ -80,7 +80,7 @@ void NewCagePanel::Dismiss()
 
 void NewCagePanel::SetModel(const std::shared_ptr<ProjectModelData>& model)
 {
-	// UIPanel::SetModel(model);
+	UIPanel::SetModel(model);
 
 	// _selectedDeformationTypeIndex = static_cast<uint32_t>(_model->_deformationType);
 	// _selectedWeightingSchemeIndex = static_cast<uint32_t>(_model->_LBCWeightingScheme);
