@@ -58,6 +58,8 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
             if (p[j] < min_coordinates[j])  min_coordinates[j] = p[j];
         }
     }
+    
+
     for (int j = 0; j < 3; j++) 
     {   
         double d = max_coordinates[j] - min_coordinates[j];
@@ -79,6 +81,9 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     cage_vertices.row(5) = Eigen::Vector3d(max_coordinates[0], max_coordinates[1], min_coordinates[2]);
     cage_vertices.row(6) = Eigen::Vector3d(max_coordinates[0], max_coordinates[1], max_coordinates[2]);
     cage_vertices.row(7) = Eigen::Vector3d(min_coordinates[0], max_coordinates[1], max_coordinates[2]);
+
+    std::cout << "anzahl vertices " << vertices.rows() << std::endl;
+
 
     cage_faces.row(0) = Eigen::Vector3i(0,1,2);
     cage_faces.row(1) = Eigen::Vector3i(0,2,3);
@@ -1039,89 +1044,25 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     identifyFeatureVoxels(voxels, mesh_vertices, mesh_faces);
 
+    for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)  
+    {
+        for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++)
+        {
+            for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)
+            {
+                voxels.voxel_types[k1][k2][k3] = 0;
+            }
+        }
+    }
+
     identifyOuterVoxels(voxels);
     // identifyOuterVoxelsWithFillingAlgo(voxels, Eigen::Vector3i::Zero(1,3));
-
-    ///////////////////////
-
-    BBVoxel bb;
-
-    bb.start_pt = voxels.start_pt;
-    bb.start_pt[0] = bb.start_pt[0] + 40.;
-    bb.start_pt[1] = bb.start_pt[1] + 40.;
-    bb.start_pt[2] = bb.start_pt[2] + 40.;
-    bb.n_voxel[0] = 3;
-    bb.n_voxel[1] = 3;
-    bb.n_voxel[2] = 3;
-    bb.res_voxel[0] = 8.;
-    bb.res_voxel[1] = 8.;
-    bb.res_voxel[2] = 8.;
-
-    bb.centers = std::vector<std::vector<std::vector<Eigen::Vector3d>>>(
-        3, std::vector<std::vector<Eigen::Vector3d>>(
-            3, std::vector<Eigen::Vector3d>(3, Eigen::Vector3d(0.0,0.0,0.0))
-        )
-    );
-
-    bb.voxel_types = std::vector<std::vector<std::vector<int8_t>>>(
-        3, std::vector<std::vector<int8_t>>(
-            3, std::vector<int8_t>(3, 1)
-        )
-    );
-    bb.voxel_types[2][0][0] = 0;
-    bb.voxel_types[1][1][1] = 0;
-    bb.voxel_types[0][0][2] = 0;
-
-
-    bb.voxel_pts = std::vector<std::vector<std::vector<Eigen::Vector3d>>>(
-        4, std::vector<std::vector<Eigen::Vector3d>>(
-            4, std::vector<Eigen::Vector3d>(4, Eigen::Vector3d(0.0,0.0,0.0))
-        )
-    );
-    for (int k3 = 0; k3 < bb.n_voxel[2]+1; k3++)
-    {
-        for (int k2 = 0; k2 < bb.n_voxel[1]+1; k2++) 
-        {
-            for (int k1 = 0; k1 < bb.n_voxel[0]+1; k1++)
-            {
-                double x = bb.start_pt[0] + k1 * bb.res_voxel[0];
-                double y = bb.start_pt[1] + k2 * bb.res_voxel[1];
-                double z = bb.start_pt[2] + k3 * bb.res_voxel[2];
-                bb.voxel_pts[k1][k2][k3] = Eigen::Vector3d(x,y,z);
-            }
-        }
-    }
-    for (int k3 = 0; k3 < bb.n_voxel[2]; k3++)
-    {
-        for (int k2 = 0; k2 < bb.n_voxel[1]; k2++) 
-        {
-            for (int k1 = 0; k1 < bb.n_voxel[0]; k1++)
-            {
-                double x = bb.start_pt[0] + (double)(k1+0.5) * bb.res_voxel[0];
-                double y = bb.start_pt[1] + (double)(k2+0.5) * bb.res_voxel[1];
-                double z = bb.start_pt[2] + (double)(k3+0.5) * bb.res_voxel[2];
-                bb.centers[k1][k2][k3] = Eigen::Vector3d(x,y,z);
-            }
-        }
-    }
-    
-
-
-    // extractOuterSurface(bb, cage_vertices, cage_faces);
-
-
-
-
-
-
-
-    //////////////////////////
 
     extractOuterSurface(voxels, cage_vertices, cage_faces);
 
     float lambda_smooth = .2;
     int num_it = 20;
-    smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
+    // smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
 
 
     // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);   
