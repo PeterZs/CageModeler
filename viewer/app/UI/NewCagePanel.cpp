@@ -23,17 +23,49 @@ void NewCagePanel::Layout()
 
     const auto displaySize = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(displaySize.x / 2.0f, displaySize.y / 2.0f),
-                             ImGuiCond_Appearing,
-                             ImVec2(0.5f, 0.5f));
+		ImGuiCond_Appearing,
+		ImVec2(0.5f, 0.5f));
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 20.0f));
 
     if (ImGui::BeginPopupModal("New Cage", &_isModalVisible,
         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
     {
-        ImGui::Text("Create a new cage");
+        const auto descColumnWidth = std::max(0.2f * displaySize.x, 150.0f);
+		const auto settingsColumnWidth = std::max(0.3f * displaySize.x, 250.0f);
+		const auto horizontalOffset = descColumnWidth + settingsColumnWidth;
 
-        ImGui::Dummy(ImVec2(0.0f, 10.0f)); 
+		const auto meshOperationSystem = _meshOperationSystem.lock();
+		if (meshOperationSystem == nullptr)
+		{
+			return;
+		}
+
+        const auto hasRunningOperation = (meshOperationSystem->GetCurrentOperation() != nullptr);
+
+        ImGui::BeginDisabled(hasRunningOperation);
+        if (ImGui::BeginTable("##NewCageTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame))
+        {
+            constexpr auto columnFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoHeaderLabel;
+
+			ImGui::TableSetupColumn("##Description", columnFlags, descColumnWidth);
+			ImGui::TableSetupColumn("##Settings", columnFlags, settingsColumnWidth);
+        
+            ImGui::TableNextRow();
+            {
+                ImGui::TableSetColumnIndex(0);
+				ImGui::TextEx("Coordinates");
+				ImGui::SameLine();
+
+				ImGui::TableSetColumnIndex(1);
+
+				UIHelpers::SetRightAligned(125.0f);
+            }
+        }
+
+
+
+
 
         const auto buttonSize = ImVec2(100.0f, 0.0f);
 

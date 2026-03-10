@@ -16,8 +16,8 @@
 #include <queue>
 #include <map>
 
-static const double EPSILON_BB = 0.15;
-static const float PREDEFINED_SPARSE_FACTOR = 0.5;
+static const double EPSILON_BB = 0.3;
+static const float PREDEFINED_SPARSE_FACTOR = 0.1;
 
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter)
 {
@@ -82,8 +82,6 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     cage_vertices.row(6) = Eigen::Vector3d(max_coordinates[0], max_coordinates[1], max_coordinates[2]);
     cage_vertices.row(7) = Eigen::Vector3d(min_coordinates[0], max_coordinates[1], max_coordinates[2]);
 
-    std::cout << "anzahl vertices " << vertices.rows() << std::endl;
-
 
     cage_faces.row(0) = Eigen::Vector3i(0,1,2);
     cage_faces.row(1) = Eigen::Vector3i(0,2,3);
@@ -100,10 +98,10 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
 
     // transform back
     cage_vertices = cage_vertices * pca_basic_matrix.transpose();
-    for (int i = 0; i < cage_vertices.rows(); i++)
-    {   
-        cage_vertices.row(i) += barycenter;
-    }
+    // for (int i = 0; i < cage_vertices.rows(); i++)
+    // {   
+    //     cage_vertices.row(i) += barycenter;
+    // }
 }
 
 void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel& voxels, float degreeSparseness = PREDEFINED_SPARSE_FACTOR)
@@ -1044,17 +1042,6 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     identifyFeatureVoxels(voxels, mesh_vertices, mesh_faces);
 
-    for (int k3 = 0; k3 < voxels.n_voxel[2]; k3++)  
-    {
-        for (int k2 = 0; k2 < voxels.n_voxel[1]; k2++)
-        {
-            for (int k1 = 0; k1 < voxels.n_voxel[0]; k1++)
-            {
-                voxels.voxel_types[k1][k2][k3] = 0;
-            }
-        }
-    }
-
     identifyOuterVoxels(voxels);
     // identifyOuterVoxelsWithFillingAlgo(voxels, Eigen::Vector3i::Zero(1,3));
 
@@ -1062,7 +1049,7 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
 
     float lambda_smooth = .2;
     int num_it = 20;
-    // smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
+    smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
 
 
     // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);   
