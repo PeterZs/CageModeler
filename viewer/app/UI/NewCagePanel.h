@@ -12,7 +12,8 @@ class MeshOperationSystem;
 class NewCagePanel final : public UIPanel<std::shared_ptr<ProjectModelData>>
 {
 public:
-	NewCagePanel(const std::shared_ptr<MeshOperationSystem>& meshOperationSystem,
+	NewCagePanel(const std::shared_ptr<ProjectModelData>& model,
+		const std::shared_ptr<MeshOperationSystem>& meshOperationSystem,
 		std::function<void ()> cancelDelegate,
 		std::function<void ()> createDelegate);
 
@@ -24,8 +25,6 @@ public:
 
 	void Dismiss();
 
-	std::shared_ptr<ProjectModelData> GetModel() const;
-
 	[[nodiscard]] bool IsModalPanelVisible() const
 	{
 		return _isModalVisible;
@@ -33,11 +32,11 @@ public:
 
 private:
 	std::weak_ptr<MeshOperationSystem> _meshOperationSystem;
-
+	ProjectModelData _modifiedProjectModel;
 	std::function<void ()> _cancelDelegate;
 	std::function<void ()> _createDelegate;
 
-	// uint32_t _selectedDeformationTypeIndex = -1;
+	uint32_t _selectedDeformationTypeIndex = -1;
 	// uint32_t _selectedWeightingSchemeIndex = -1;
 
 	/// Keeps track inside ImGui whether the New Cage popup should be displayed.

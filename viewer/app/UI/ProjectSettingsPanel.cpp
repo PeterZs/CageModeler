@@ -65,6 +65,8 @@ void ProjectSettingsPanel::Layout()
 
 				UIHelpers::SetRightAligned(125.0f);
 
+				std::cout << _selectedDeformationTypeIndex << std::endl;
+
 				if (ImGui::BeginCombo("##Deformation", ProjecSettingsHelpers::DeformationMethodNames[_selectedDeformationTypeIndex], ImGuiComboFlags_HeightRegular))
 				{
 					for (auto i = 0; i < ProjecSettingsHelpers::DeformationMethodNames.size(); i++)
@@ -456,6 +458,8 @@ void ProjectSettingsPanel::SetModel(const std::shared_ptr<ProjectModelData>& mod
 
 	_selectedDeformationTypeIndex = static_cast<uint32_t>(_model->_deformationType);
 	_selectedWeightingSchemeIndex = static_cast<uint32_t>(_model->_LBCWeightingScheme);
+
+	std::cout << _selectedDeformationTypeIndex << std::endl;
 
 	//_selectedBulgingTypeIndex = static_cast<uint32_t>(_model->_somigBulgingType);
 

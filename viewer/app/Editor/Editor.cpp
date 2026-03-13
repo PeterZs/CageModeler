@@ -254,7 +254,7 @@ void Editor::RecordUI()
 
 			if (ImGui::MenuItem("New Cage..."))
 			{	
-				_newCagePanel = std::make_shared<NewCagePanel>(
+				_newCagePanel = std::make_shared<NewCagePanel>(_projectModel,
 					_meshOperationSystem,
 					[this] { OnNewCageCancelled(); },
 					[this] { OnNewCageCreated(); });
@@ -509,10 +509,10 @@ void Editor::OnNewCageCreated()
 	_threadPool->Submit([this](){
 
 		// Update _projectModel if user creates a new project
-		// if(_newCagePanel != nullptr) {
-		// 	auto _panelModel = _newCagePanel->GetModel();
-		// 	_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
-		// }
+		if(_newCagePanel != nullptr) {
+			// auto _panelModel = _newCagePanel->GetModel();
+			// _projectModel = std::make_shared<ProjectModelData>(*_panelModel);
+		}
 
 		auto result = GenerateCage(*_projectData);	
 

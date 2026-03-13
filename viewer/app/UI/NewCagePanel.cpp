@@ -2,7 +2,8 @@
 #include <UI/ProjectSettingsHelpers.h>
 #include <Mesh/Operations/MeshOperationSystem.h>
 
-NewCagePanel::NewCagePanel( const std::shared_ptr<MeshOperationSystem>& meshOperationSystem,
+NewCagePanel::NewCagePanel( const std::shared_ptr<ProjectModelData>& model,
+                            const std::shared_ptr<MeshOperationSystem>& meshOperationSystem,
                             std::function<void ()> cancelDelegate,
                             std::function<void()> createDelegate)
 	: _meshOperationSystem(meshOperationSystem)
@@ -29,7 +30,7 @@ void NewCagePanel::Layout()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 20.0f));
 
     if (ImGui::BeginPopupModal("New Cage", &_isModalVisible,
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings))
     {
         const auto descColumnWidth = std::max(0.2f * displaySize.x, 150.0f);
 		const auto settingsColumnWidth = std::max(0.3f * displaySize.x, 250.0f);
@@ -60,6 +61,31 @@ void NewCagePanel::Layout()
 				ImGui::TableSetColumnIndex(1);
 
 				UIHelpers::SetRightAligned(125.0f);
+
+
+                std::cout << _selectedDeformationTypeIndex << std::endl;
+                if (ImGui::BeginCombo("##Deformation", ProjecSettingsHelpers::DeformationMethodNames[_selectedDeformationTypeIndex], ImGuiComboFlags_HeightRegular))
+				{
+                    std::cout << ProjecSettingsHelpers::DeformationMethodNames.size() << std::endl;
+					for (auto i = 0; i < ProjecSettingsHelpers::DeformationMethodNames.size(); i++)
+					{
+						const auto isSelected = (_selectedDeformationTypeIndex == i);
+
+						if (ImGui::Selectable(ProjecSettingsHelpers::DeformationMethodNames[i], isSelected))
+						{
+							_selectedDeformationTypeIndex = i;
+						}
+
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+
+					_modifiedProjectModel._deformationType = static_cast<DeformationType>(_selectedDeformationTypeIndex);
+
+					ImGui::EndCombo();
+				}
             }
         }
 
@@ -114,10 +140,12 @@ void NewCagePanel::SetModel(const std::shared_ptr<ProjectModelData>& model)
 {
 	UIPanel::SetModel(model);
 
-	// _selectedDeformationTypeIndex = static_cast<uint32_t>(_model->_deformationType);
+	_selectedDeformationTypeIndex = static_cast<uint32_t>(_model->_deformationType);
 	// _selectedWeightingSchemeIndex = static_cast<uint32_t>(_model->_LBCWeightingScheme);
+
+    std::cout << _selectedDeformationTypeIndex << std::endl;
 
 	// //_selectedBulgingTypeIndex = static_cast<uint32_t>(_model->_somigBulgingType);
 
-	// _modifiedProjectModel = *_model;
+	_modifiedProjectModel = *_model;
 }
