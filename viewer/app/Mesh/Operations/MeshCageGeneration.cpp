@@ -8,11 +8,14 @@ MeshCageGeneration::ExecutionResult MeshCageGeneration::Execute()
 
     // Need to distinguish several methods for cage generation here
     // At the moment only one method is implemented
-
-    generateCage(_params._mesh._vertices, _params._mesh._faces, _params._cage._vertices, _params._cage._faces);
+    
+    if (_params._cageGenerationType == CageGenerationMethod::CoarseBoundingCagesByXian)
+    {
+        generateCageCoarseBouding(_params._mesh._vertices, _params._mesh._faces, _params._cage._vertices, _params._cage._faces, _params._setting._sparseFactor);   
+    }
 
     MeshCageGenerationResult result;
     result._cage = std::move(_params._cage);
 
     return result;
-}
+} 

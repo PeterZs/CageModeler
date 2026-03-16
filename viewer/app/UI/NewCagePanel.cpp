@@ -12,27 +12,30 @@ NewCagePanel::NewCagePanel( const std::shared_ptr<ProjectModelData>& model,
 	, _createButtonPressed(false)
 	, _cancelButtonPressed(false)
 {
+    _modifiedProjectModel = *model;
 
+    SetModel(model);
 }
 
 void NewCagePanel::Layout()
 {
-    if (!_isModalVisible)
-        return;
+    if (_isModalVisible)
+	{
+		ImGui::OpenPopup("ProjectSettings");
+	}
 
-    ImGui::OpenPopup("New Cage");
+	const auto displaySize = ImGui::GetIO().DisplaySize;
 
-    const auto displaySize = ImGui::GetIO().DisplaySize;
-    ImGui::SetNextWindowPos(ImVec2(displaySize.x / 2.0f, displaySize.y / 2.0f),
+	ImGui::SetNextWindowPos(ImVec2(displaySize.x / 2.0f, displaySize.y / 2.0f),
 		ImGuiCond_Appearing,
 		ImVec2(0.5f, 0.5f));
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 20.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 20.0f));
 
-    if (ImGui::BeginPopupModal("New Cage", &_isModalVisible,
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings))
-    {
-        const auto descColumnWidth = std::max(0.2f * displaySize.x, 150.0f);
+	if (ImGui::BeginPopupModal("ProjectSettings", &_isModalVisible,
+		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings))
+	{
+		const auto descColumnWidth = std::max(0.2f * displaySize.x, 150.0f);
 		const auto settingsColumnWidth = std::max(0.3f * displaySize.x, 250.0f);
 		const auto horizontalOffset = descColumnWidth + settingsColumnWidth;
 
@@ -42,19 +45,19 @@ void NewCagePanel::Layout()
 			return;
 		}
 
-        const auto hasRunningOperation = (meshOperationSystem->GetCurrentOperation() != nullptr);
+		const auto hasRunningOperation = (meshOperationSystem->GetCurrentOperation() != nullptr);
 
-        ImGui::BeginDisabled(hasRunningOperation);
-        if (ImGui::BeginTable("##NewCageTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame))
-        {
-            constexpr auto columnFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoHeaderLabel;
+		ImGui::BeginDisabled(hasRunningOperation);
+		if (ImGui::BeginTable("##SettingsTable", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame))
+		{
+			constexpr auto columnFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoHeaderLabel;
 
 			ImGui::TableSetupColumn("##Description", columnFlags, descColumnWidth);
 			ImGui::TableSetupColumn("##Settings", columnFlags, settingsColumnWidth);
-        
-            ImGui::TableNextRow();
-            {
-                ImGui::TableSetColumnIndex(0);
+
+			ImGui::TableNextRow();
+			{
+				ImGui::TableSetColumnIndex(0);
 				ImGui::TextEx("Coordinates");
 				ImGui::SameLine();
 
@@ -62,11 +65,8 @@ void NewCagePanel::Layout()
 
 				UIHelpers::SetRightAligned(125.0f);
 
-
-                std::cout << _selectedDeformationTypeIndex << std::endl;
-                if (ImGui::BeginCombo("##Deformation", ProjecSettingsHelpers::DeformationMethodNames[_selectedDeformationTypeIndex], ImGuiComboFlags_HeightRegular))
+				if (ImGui::BeginCombo("##Deformation", ProjecSettingsHelpers::DeformationMethodNames[_selectedDeformationTypeIndex], ImGuiComboFlags_HeightRegular))
 				{
-                    std::cout << ProjecSettingsHelpers::DeformationMethodNames.size() << std::endl;
 					for (auto i = 0; i < ProjecSettingsHelpers::DeformationMethodNames.size(); i++)
 					{
 						const auto isSelected = (_selectedDeformationTypeIndex == i);
@@ -82,35 +82,148 @@ void NewCagePanel::Layout()
 						}
 					}
 
-					_modifiedProjectModel._deformationType = static_cast<DeformationType>(_selectedDeformationTypeIndex);
+                    _modifiedProjectModel._deformationType = static_cast<DeformationType>(_selectedDeformationTypeIndex);
 
 					ImGui::EndCombo();
 				}
+			}
+
+			ImGui::BeginDisabled(_modifiedProjectModel._deformationType != DeformationType::LBC);
+			{
+				ImGui::TableNextRow();
+				{
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextEx("LBC Weighting Scheme");
+					ImGui::SameLine();
+					UIHelpers::HelpMarker("The weighting scheme for LBC, which controls the level of locality.");
+					ImGui::SameLine();
+
+					ImGui::TableSetColumnIndex(1);
+
+					UIHelpers::SetRightAligned(125.0f);
+
+					if (ImGui::BeginCombo("##WeightingScheme", ProjecSettingsHelpers::LBCWeightingSchemeNames[_selectedWeightingSchemeIndex], ImGuiComboFlags_HeightRegular))
+					{
+						for (auto i = 0; i < ProjecSettingsHelpers::LBCWeightingSchemeNames.size(); i++)
+						{
+							const auto isSelected = (_selectedWeightingSchemeIndex == i);
+
+							if (ImGui::Selectable(ProjecSettingsHelpers::LBCWeightingSchemeNames[i], isSelected))
+							{
+								_selectedWeightingSchemeIndex = i;
+							}
+
+							if (isSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+
+						ImGui::EndCombo();
+					}
+
+					_modifiedProjectModel._LBCWeightingScheme = static_cast<LBC::DataSetup::WeightingScheme>(_selectedWeightingSchemeIndex);
+				}
+			}
+			ImGui::EndDisabled();
+
+			ImGui::Dummy(ImVec2(0.0f, 10.0f));
+
+			ImGui::TableNextRow();
+			{
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::PushFont(UIStyle::BoldFont);
+				ImGui::SetWindowFontScale(1.05f);
+				ImGui::TextEx("Cage Generation Settings");
+				ImGui::SetWindowFontScale(1.0f);
+				ImGui::PopFont();
+			}
+
+			ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+            ImGui::TableNextRow();
+            {
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextEx("Methods");
+                ImGui::SameLine();
+
+                ImGui::TableSetColumnIndex(1);
+
+                UIHelpers::SetRightAligned(125.0f);
+
+                if (ImGui::BeginCombo("##CageGeneration", ProjecSettingsHelpers::CageGenerationMethodNames[_selectedCageGenerationIndex], ImGuiComboFlags_HeightRegular))
+                {
+                    for (auto i = 0; i < ProjecSettingsHelpers::CageGenerationMethodNames.size(); i++)
+                    {
+                        const auto isSelected = (_selectedCageGenerationIndex == i);
+
+                        if (ImGui::Selectable(ProjecSettingsHelpers::CageGenerationMethodNames[i], isSelected))
+                        {
+                            _selectedCageGenerationIndex = i;
+                        }
+
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    
+                    _modifiedProjectModel._cageGenerationType = static_cast<CageGenerationMethod>(_selectedCageGenerationIndex);
+
+                    ImGui::EndCombo();
+                }
             }
-        }
 
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
+            ImGui::TableNextRow();
+            {
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextEx("Sparse Factor");
+                ImGui::SameLine();
+                UIHelpers::HelpMarker("Sparse Factor, scale cage size.");
 
+                ImGui::TableSetColumnIndex(1);
+                UIHelpers::SetRightAligned(100.0f);
+                ImGui::InputFloat("##Factor", &_setting._sparseFactor, 0.01f, 0.0f, "%.2f", ImGuiInputTextFlags_NoHorizontalScroll);
+            }
+		}
+		ImGui::EndDisabled();
 
+		ImGui::EndTable();
 
-        const auto buttonSize = ImVec2(100.0f, 0.0f);
+		ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-        // Cancel Button
-        if (ImGui::Button("Cancel", buttonSize))
+		const auto buttonSize = ImGui::CalcItemSize(ImVec2(100.0f, 0.0f), 0.0f, 0.0f);
+		ImGui::SetCursorPosX(descColumnWidth + settingsColumnWidth - buttonSize.x * 2.0f - ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().WindowPadding.x);
+
+		// Cancel the creation and dismiss the popup.
+		if (ImGui::Button("Cancel", buttonSize))
+		{
+			// No need to clear anything on the modified data since this is going to destroy the object anyways.
+
+			Dismiss();
+		}
+
+		ImGui::SameLine();
+
+		const auto hasNoMesh = !_modifiedProjectModel._meshFilepath.has_value() || !_modifiedProjectModel._cageFilepath.has_value();
+		const auto hasNoDeformedCage = !_modifiedProjectModel._cageFilepath.has_value();
+		const auto hasNoEmbedding = (DeformationTypeHelpers::RequiresEmbedding(_modifiedProjectModel._deformationType) && !_modifiedProjectModel._embeddingFilepath.has_value());
+		const auto hasNoChanges = (_modifiedProjectModel == *_model);
+
+		// Create the new cage.
+		if (ImGui::Button("Create", buttonSize))
         {
-            Dismiss(); 
-        }
+            // Update the value of the actual model pointer.
+            *_model = _modifiedProjectModel;
 
-        ImGui::SameLine();
-
-        // Create Button
-        if (ImGui::Button("Create", buttonSize))
-        {
             _createButtonPressed = true;
         }
 
-        ImGui::EndPopup();
-    }
+		ImGui::EndPopup();
+	}
 
     ImGui::PopStyleVar();
 
@@ -141,11 +254,21 @@ void NewCagePanel::SetModel(const std::shared_ptr<ProjectModelData>& model)
 	UIPanel::SetModel(model);
 
 	_selectedDeformationTypeIndex = static_cast<uint32_t>(_model->_deformationType);
-	// _selectedWeightingSchemeIndex = static_cast<uint32_t>(_model->_LBCWeightingScheme);
+	_selectedWeightingSchemeIndex = static_cast<uint32_t>(_model->_LBCWeightingScheme);
+    _selectedCageGenerationIndex = static_cast<uint32_t>(_model->_cageGenerationType);
 
-    std::cout << _selectedDeformationTypeIndex << std::endl;
-
-	// //_selectedBulgingTypeIndex = static_cast<uint32_t>(_model->_somigBulgingType);
+	//_selectedBulgingTypeIndex = static_cast<uint32_t>(_model->_somigBulgingType);
 
 	_modifiedProjectModel = *_model;
+}
+
+std::shared_ptr<ProjectModelData> NewCagePanel::GetModel() const 
+{ 
+	return _model; 
+}
+
+
+NewCageSetting NewCagePanel::GetSetting() const
+{
+    return _setting;
 }

@@ -2,6 +2,7 @@
 
 #include <Rendering/Scene/SceneRenderer.h>
 #include <UI/NewProjectPanel.h>
+#include <UI/NewCagePanel.h>
 #include <Editor/Scene.h>
 #include <Core/Subsystem.h>
 #include <Core/DoubleBuffer.h>
@@ -147,7 +148,10 @@ private:
 	 * Generate a new cage given the mesh. 
 	 * 
 	 */
-	[[nodiscard]] MeshOperationResult<MeshCageGenerationResult> GenerateCage(const ProjectData& projectData) const;
+	[[nodiscard]] MeshOperationResult<MeshCageGenerationResult> GenerateCage(const CageGenerationMethod cageGenerationMethod,
+		EigenMesh mesh,
+		EigenMesh cage,
+		NewCageSetting setting) const;
 
 	/**
 	 * Sets the gizmo position based on the selection.

@@ -1027,7 +1027,7 @@ void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, flo
 }
 
 
-void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
+void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const float sparse_factor)
 {   
     Eigen::MatrixXd pca_basic_matrix;
     Eigen::MatrixXd pca_based_mesh_vertices;
@@ -1035,8 +1035,8 @@ void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& m
     calculatePCA(mesh_vertices, pca_basic_matrix, pca_based_mesh_vertices, barycenter);
 
     computeBB(pca_based_mesh_vertices, cage_vertices, cage_faces, pca_basic_matrix, barycenter);
-
-    float sparse_factor = 0.2; // optinally user can define the sparse factor 
+    
+    // optinally user can define the sparse factor 
     BBVoxel voxels;
     voxelizeBB(mesh_vertices, cage_vertices, voxels, sparse_factor);
 

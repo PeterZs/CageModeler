@@ -2,6 +2,7 @@
 
 #include <Mesh/Operations/MeshWeightsParams.h>
 #include <cagedeformations/somig.h>
+#include <Mesh/Operations/MeshCageGeneration.h>
 
 struct ProjectModelData
 {
@@ -145,6 +146,7 @@ struct ProjectModelData
 
 	DeformationType _deformationType = DeformationType::Green;
 	LBC::DataSetup::WeightingScheme _LBCWeightingScheme = LBC::DataSetup::WeightingScheme::SQUARE;
+	CageGenerationMethod _cageGenerationType = CageGenerationMethod::CoarseBoundingCagesByXian;
 
 	int32_t _numBBWSteps = 300;
 	int32_t _numSamples = 2;

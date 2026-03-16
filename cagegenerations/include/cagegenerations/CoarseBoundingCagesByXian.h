@@ -45,5 +45,5 @@ void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen:
 
 void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, float lambda_smooth, int it_smooth, Eigen::MatrixXd& pca_based_mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
-void generateCage(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
+void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const float sparse_factor);
 

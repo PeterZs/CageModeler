@@ -510,11 +510,11 @@ void Editor::OnNewCageCreated()
 
 		// Update _projectModel if user creates a new project
 		if(_newCagePanel != nullptr) {
-			// auto _panelModel = _newCagePanel->GetModel();
-			// _projectModel = std::make_shared<ProjectModelData>(*_panelModel);
+			auto _panelModel = _newCagePanel->GetModel();
+			_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
 		}
-
-		auto result = GenerateCage(*_projectData);	
+		
+		auto result = GenerateCage(_projectModel->_cageGenerationType, _projectData->_mesh, _projectData->_mesh, _newCagePanel->GetSetting());
 
 		if (result.HasError())
 		{
@@ -535,23 +535,7 @@ void Editor::OnNewCageCreated()
 		cageMesh->SetModelMatrix(newModelMatrix);
 
 		_isComputingWeightsData.store(true, std::memory_order_seq_cst);
-		
-		// std::cout << "deformationtype:  " << DeformationTypeHelpers::DeformationTypeToString(_projectData->_deformationType, _projectData->_LBCWeightingScheme) << std::endl;
 
-		// std::cout << _projectData->_cagePoints.rows() << "  " << _projectData->_cagePoints.cols() << std::endl;
-		// std::cout << _projectData->_cagePoints(0,0) << std::endl;
-		// std::cout << _projectData->_cagePoints(1,0) << std::endl;
-		// std::cout << _projectData->_cagePoints(2,0) << std::endl;
-		// std::cout << _projectData->_cagePoints(3,0) << std::endl;
-		// std::cout << _projectData->_cage._faces.rows() << "  " << _projectData->_cage._faces.cols() << std::endl;
-		// std::cout << _projectData->_normals.rows() << "  " << _projectData->_normals.cols() << std::endl;
-
-		// std::cout << "b: " << _projectData->_b.rows() << "  " << _projectData->_b.cols() << std::endl;
-		// std::cout << "bc: " << _projectData->_bc.rows() << "  " << _projectData->_bc.cols() << std::endl;
-
-
-		// Example - calculate new MVC
-		_projectData->_deformationType = DeformationType::MVC;
 		_projectData->_cage = result.GetValue()._cage;
 
 		auto weightsResult = ComputeCageWeights(*_projectData);
@@ -565,54 +549,12 @@ void Editor::OnNewCageCreated()
 
 		_isComputingWeightsData.store(false, std::memory_order_seq_cst);
 
-
-
-		// We only recompute the vertex colors if they were previously on.
-		// const auto renderInfluenceMap = _projectModel->CanRenderInfluenceMap();
-		// if (renderInfluenceMap)
-		// {
-		// 	UpdateMeshVertexColors(renderInfluenceMap);
-		// }
-
-		// // Update the settings panel.
-		// _projectOptionsPanel->SetDeformableMesh(_scene->GetMesh(_deformedMeshHandle));
-		// _projectOptionsPanel->SetCageMesh(_scene->GetMesh(_deformedCageHandle));
-
-		// // Update the mesh and the cage. We do this only once to compute the weights and any other operation is executed simply on the deformed cage.
-		// _toolBar->SetModel(std::make_shared<ToolBarModel>(_projectData));
-
-		// // Update the status bar to display the new meshes.
-		// _statusBar->SetModel(std::make_shared<StatusBarModel>(_projectData,
-		// 	[this]<typename T>(T&& selectionType) { OnSelectionTypeChanged(std::forward<T>(selectionType)); },
-		// 	[this](const uint32_t newFrameIndex) { OnSequencerFrameIndexChanged(newFrameIndex); },
-		// 	[this](const uint32_t frameIndex, const uint32_t numFrames) { OnSequencerNumFramesChanged(frameIndex, numFrames); },
-		// 	[this]() { OnSequencerStartedDragging(); },
-		// 	[this]() { OnSequencerEndedDragging(); }));
-
-		// // Updates the vertex data with the last sample.
-		// UpdateDeformedMeshPositionsFromDeformationData();
-
-		// // Rebuild the entire BVH.
-		// {
-		// 	auto bvhBuilder = _scene->BeginGeometryBVH();
-		// 	bvhBuilder.AddGeometry(_deformedMeshHandle);
-		// 	bvhBuilder.AddGeometry(_deformedCageHandle);
-		// }
-		
-		
-
 		if (_newCagePanel != nullptr)
 		{
 			_newCagePanel->Dismiss();
 			_newCagePanel = nullptr;
 		}
 	});
-
-
-
-
-	
-
 	return;
 }
 
@@ -1400,11 +1342,16 @@ MeshOperationResult<MeshComputeWeightsOperationResult> Editor::ComputeCageWeight
 		projectData._numSamples);
 }
 
-MeshOperationResult<MeshCageGenerationResult> Editor::GenerateCage(const ProjectData& projectData) const
+MeshOperationResult<MeshCageGenerationResult> Editor::GenerateCage(const CageGenerationMethod cageGenerationMethod,
+	EigenMesh mesh,
+	EigenMesh cage,
+	NewCageSetting setting) const
 {
 	return _meshOperationSystem->ExecuteOperation<MeshCageGeneration>(
-		projectData._mesh,
-		projectData._cage
+		cageGenerationMethod,
+		std::move(mesh),
+		std::move(cage),
+		setting
 	);
 }
 

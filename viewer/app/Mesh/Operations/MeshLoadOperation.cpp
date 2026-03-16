@@ -10,6 +10,8 @@
 #include <igl/EPS.h>
 #include <igl/readDMAT.h>
 
+#include <UI/NewCageSetting.h>
+
 #include <fstream>
 
 namespace
@@ -165,8 +167,8 @@ MeshLoadOperation::ExecutionResult MeshLoadOperation::Execute()
 			if (!DeformationTypeHelpers::RequiresEmbedding(_params._deformationType))
 			{
 				LOG_DEBUG("Cagepath was empty, there cage will be created automatically.");		
-
-				MeshCageGenerationParams genParams(mesh, EigenMesh{});
+				NewCageSetting setting;
+				MeshCageGenerationParams genParams(CageGenerationMethod::CoarseBoundingCagesByXian, mesh, EigenMesh{}, setting);
 				MeshCageGeneration generator(std::move(genParams));
 				auto result = generator.Execute();
 				if (result.HasError())

@@ -5,6 +5,7 @@
 
 #include <UI/UIPanel.h>
 #include <UI/ProjectModel.h>
+#include <UI/NewCageSetting.h>
 
 class ThreadPool;
 class MeshOperationSystem;
@@ -25,6 +26,10 @@ public:
 
 	void Dismiss();
 
+	NewCageSetting GetSetting() const;
+
+	std::shared_ptr<ProjectModelData> GetModel() const;
+
 	[[nodiscard]] bool IsModalPanelVisible() const
 	{
 		return _isModalVisible;
@@ -37,7 +42,10 @@ private:
 	std::function<void ()> _createDelegate;
 
 	uint32_t _selectedDeformationTypeIndex = -1;
-	// uint32_t _selectedWeightingSchemeIndex = -1;
+	uint32_t _selectedWeightingSchemeIndex = -1;
+	uint32_t _selectedCageGenerationIndex = -1;
+
+	NewCageSetting _setting;
 
 	/// Keeps track inside ImGui whether the New Cage popup should be displayed.
 	bool _isModalVisible = false;
