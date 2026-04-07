@@ -16,9 +16,14 @@
 #include <queue>
 #include <map>
 
-static const double EPSILON_BB = 0.3;
+static const double EPSILON_BB = 0.8;
 static const float PREDEFINED_SPARSE_FACTOR = 0.1;
 
+/**
+ * Performs Principal Component Analysis (PCA) on mesh vertices.
+ * Centers the data, computes the covariance matrix, and projects the vertices 
+ * into the local coordinate system defined by the eigenvectors.
+ */
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter)
 {
     barycenter = mesh_vertices.colwise().mean(); // barycenter of mesh
@@ -43,6 +48,13 @@ void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_bas
     pca_based_mesh_vertices = mesh_vertices * pca_basic_matrix;
 }
 
+
+/**
+ * Computes an Oriented Bounding Box (OBB) for the mesh.
+ * The function determines the axis-aligned min/max bounds in the PCA-transformed 
+ * space, applies a small epsilon padding, generates a box mesh (8 vertices, 12 faces), 
+ * and transforms the resulting cage back into the original world space.
+ */
 void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const Eigen::MatrixXd& pca_basic_matrix, const Eigen::Vector3d& barycenter)
 {
     // calculate max and min coordinates for BB
@@ -59,7 +71,6 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
         }
     }
     
-
     for (int j = 0; j < 3; j++) 
     {   
         double d = max_coordinates[j] - min_coordinates[j];
@@ -82,7 +93,6 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
     cage_vertices.row(6) = Eigen::Vector3d(max_coordinates[0], max_coordinates[1], max_coordinates[2]);
     cage_vertices.row(7) = Eigen::Vector3d(min_coordinates[0], max_coordinates[1], max_coordinates[2]);
 
-
     cage_faces.row(0) = Eigen::Vector3i(0,1,2);
     cage_faces.row(1) = Eigen::Vector3i(0,2,3);
     cage_faces.row(2) = Eigen::Vector3i(1,5,6);
@@ -98,12 +108,15 @@ void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, 
 
     // transform back
     cage_vertices = cage_vertices * pca_basic_matrix.transpose();
-    // for (int i = 0; i < cage_vertices.rows(); i++)
-    // {   
-    //     cage_vertices.row(i) += barycenter;
-    // }
 }
 
+
+/**
+ * Voxelizes the Bounding Box of the mesh.
+ * This function calculates the voxel grid dimensions and resolution based on a 
+ * sparseness factor and the mesh density. It initializes the 3D grid, computing 
+ * both the center points of each voxel and the corner grid points.
+ */
 void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel& voxels, float degreeSparseness = PREDEFINED_SPARSE_FACTOR)
 {    
     Eigen::Vector3d max_coordinates(-std::numeric_limits<double>::max(),   -std::numeric_limits<double>::max(),    -std::numeric_limits<double>::max());
@@ -276,8 +289,6 @@ bool planeBoxOverlap(const Eigen::Vector3d normal, const double d, const Eigen::
     if (normal.dot(vmax)+d >= 0.0) return true;
     return false;
 }
-
-
 bool axistest_x01(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -297,7 +308,6 @@ bool axistest_x01(const double a, const double b, const double fa, const double 
     if (min > rad || max < -rad) return false; 
     return true;
 }
-
 bool axistest_y02(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -317,7 +327,6 @@ bool axistest_y02(const double a, const double b, const double fa, const double 
     if (min > rad || max < -rad) return false; 
     return true;
 }
-
 bool axistest_z12(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -337,7 +346,6 @@ bool axistest_z12(const double a, const double b, const double fa, const double 
     if (min > rad || max < -rad) return false; 
     return true;
 }
-
 bool axistest_z0(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -357,7 +365,6 @@ bool axistest_z0(const double a, const double b, const double fa, const double f
     if (min > rad || max < -rad) return false; 
     return true;
 }
-
 bool axistest_x2(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -377,7 +384,6 @@ bool axistest_x2(const double a, const double b, const double fa, const double f
     if (min > rad || max < -rad) return false; 
     return true;
 }
-
 bool axistest_y1(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox)
 {
     double min, max;
@@ -581,9 +587,7 @@ void renderFeatureVoxelHelper(BBVoxel voxels, Eigen::MatrixXd& cage_vertices, Ei
     std::cout << "num inner: " << num_of_inner_voxels << std::endl;
     std::cout << "num voxels: " << num_of_voxels << std::endl;
     // std::cout << (double)num_of_feature_voxels / num_of_voxels << std::endl;
-
 }
-
 
 void identifyOuterVoxels(BBVoxel& voxels)
 {
@@ -650,8 +654,12 @@ void identifyOuterVoxelsWithFillingAlgo(BBVoxel& voxels, const Eigen::Vector3i s
     }
 }
 
-
-
+/**
+ * Extracts a single face (quad) from the voxel grid and decomposes it into two triangles.
+ * It checks if the provided vertex indices already exist in the 'outer_vertices' list
+ * to avoid duplicates, updates the list if necessary, and stores the resulting 
+ * triangle faces with consistent winding order.
+ */
 void extractSingleFace(BBVoxel& voxels, std::vector<Eigen::Vector3i>& outer_faces, std::vector<int>& outer_vertices, const int& v0, const int& v1, const int& v2, const int& v3)
 {
     int i0 = -1;
@@ -703,8 +711,13 @@ void extractSingleFace(BBVoxel& voxels, std::vector<Eigen::Vector3i>& outer_face
     outer_faces.push_back(Eigen::Vector3i(i1, i2, i3));
 }
 
-
-
+/**
+ * Identifies and repairs non-manifold configurations within the voxel grid.
+ * The function first resolves non-manifold edges by converting adjacent outer voxels 
+ * into feature voxels (voxel attaching). In the second phase, it detects 
+ * non-manifold vertices (where multiple regions meet at a single point) and 
+ * marks them for later vertex splitting to ensure a topologically valid mesh.
+ */
 void checkForNonManifoldFeatureVoxels(BBVoxel& voxels)
 {
     // for non manifold edge, simply perform voxel attaching
@@ -862,10 +875,7 @@ void checkForNonManifoldFeatureVoxels(BBVoxel& voxels)
             }
         }
     }
-
 }
-
-
 void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces)
 {
     // first check for non manifoldness in CBC.
@@ -1025,9 +1035,7 @@ void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, flo
 
     cage_vertices = cage_vertices_smooth;   
 }
-
-
-void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const float sparse_factor)
+void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const float sparse_factor, const float cage_smooth_factor)
 {   
     Eigen::MatrixXd pca_basic_matrix;
     Eigen::MatrixXd pca_based_mesh_vertices;
@@ -1036,7 +1044,6 @@ void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen
 
     computeBB(pca_based_mesh_vertices, cage_vertices, cage_faces, pca_basic_matrix, barycenter);
     
-    // optinally user can define the sparse factor 
     BBVoxel voxels;
     voxelizeBB(mesh_vertices, cage_vertices, voxels, sparse_factor);
 
@@ -1047,10 +1054,11 @@ void generateCageCoarseBouding(const Eigen::MatrixXd& mesh_vertices, const Eigen
 
     extractOuterSurface(voxels, cage_vertices, cage_faces);
 
-    float lambda_smooth = .2;
-    int num_it = 20;
+    float lambda_smooth = .0;
+    if (cage_smooth_factor > 0.0)
+    {
+        lambda_smooth = cage_smooth_factor;
+    }
+    int num_it = 10;
     smoothCage(cage_vertices, cage_faces, lambda_smooth, num_it, pca_based_mesh_vertices, mesh_faces);
-
-
-    // renderFeatureVoxelHelper(voxels, cage_vertices, cage_faces);   
 }

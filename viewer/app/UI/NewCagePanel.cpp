@@ -127,7 +127,72 @@ void NewCagePanel::Layout()
 			}
 			ImGui::EndDisabled();
 
-			ImGui::Dummy(ImVec2(0.0f, 10.0f));
+			ImGui::Dummy(ImVec2(0.0f, 8.0f));
+
+			ImGui::TableNextRow();
+			{
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::PushFont(UIStyle::BoldFont);
+				ImGui::SetWindowFontScale(1.05f);
+				ImGui::TextEx("Somigliana Settings");
+				ImGui::SetWindowFontScale(1.0f);
+				ImGui::PopFont();
+			}
+
+			ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+			ImGui::BeginDisabled(_modifiedProjectModel._deformationType != DeformationType::Somigliana);
+			{
+				ImGui::InputDouble("##SomigNuNewCage", &_model->_somigNu);
+				ImGui::SameLine();
+				UIHelpers::HelpMarker("The material parameter nu for somigliana deformer.");
+
+				/*auto bulgingValue = _model->_somigBulging.load();
+				if (ImGui::InputDouble("##SomigBulging", &bulgingValue)) {
+					_model->_somigBulging = bulgingValue;
+				}
+				ImGui::SameLine();
+				UIHelpers::HelpMarker("The bulging parameter gamma for somigliana deformer.");
+
+				auto blendFactorValue = _model->_somigBlendFactor.load();
+				if (ImGui::InputDouble("##SomigBlendFactor", &blendFactorValue))
+				{
+					_model->_somigBlendFactor = blendFactorValue;
+				}
+				ImGui::SameLine();
+				UIHelpers::HelpMarker("The blending factor for somigliana deformer interpolating between local and global boundary conditions.");
+
+				if (ImGui::BeginCombo("Bulging Type",
+					ProjecSettingsHelpers::SomiglianaBulgingTypeNames[_selectedBulgingTypeIndex],
+					ImGuiComboFlags_HeightRegular | ImGuiComboFlags_WidthFitPreview))
+				{
+					for (auto i = 0; i < ProjecSettingsHelpers::SomiglianaBulgingTypeNames.size(); i++)
+					{
+						const auto isSelected = (_selectedBulgingTypeIndex == i);
+
+						if (ImGui::Selectable(ProjecSettingsHelpers::SomiglianaBulgingTypeNames[i], isSelected))
+						{
+							_selectedBulgingTypeIndex = i;
+						}
+
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+
+				_model->_somigBulgingType = static_cast<BulgingType>(_selectedBulgingTypeIndex);
+
+				ImGui::SameLine();
+				UIHelpers::HelpMarker("The bulging type for somigliana deformer.");*/
+			}
+			ImGui::EndDisabled();
+
+			ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
 			ImGui::TableNextRow();
 			{
@@ -187,6 +252,20 @@ void NewCagePanel::Layout()
                 ImGui::TableSetColumnIndex(1);
                 UIHelpers::SetRightAligned(100.0f);
                 ImGui::InputFloat("##Factor", &_setting._sparseFactor, 0.01f, 0.0f, "%.2f", ImGuiInputTextFlags_NoHorizontalScroll);
+            }
+
+			ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+            ImGui::TableNextRow();
+            {
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextEx("Cage Smoothness Factor");
+                ImGui::SameLine();
+                UIHelpers::HelpMarker("Cage Smoothness Factor.");
+
+                ImGui::TableSetColumnIndex(1);
+                UIHelpers::SetRightAligned(100.0f);
+                ImGui::InputFloat("##CageSmoothFactor", &_setting._cageSmoothFactor, 0.01f, 0.0f, "%.2f", ImGuiInputTextFlags_NoHorizontalScroll);
             }
 		}
 		ImGui::EndDisabled();

@@ -11,7 +11,7 @@ MeshCageGeneration::ExecutionResult MeshCageGeneration::Execute()
     
     if (_params._cageGenerationType == CageGenerationMethod::CoarseBoundingCagesByXian)
     {
-        generateCageCoarseBouding(_params._mesh._vertices, _params._mesh._faces, _params._cage._vertices, _params._cage._faces, _params._setting._sparseFactor);   
+        generateCageCoarseBouding(_params._mesh._vertices, _params._mesh._faces, _params._cage._vertices, _params._cage._faces, _params._setting._sparseFactor, _params._setting._cageSmoothFactor);   
     }
 
     MeshCageGenerationResult result;

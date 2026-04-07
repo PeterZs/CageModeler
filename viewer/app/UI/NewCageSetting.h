@@ -2,5 +2,6 @@
 
 struct NewCageSetting
 {
-	float _sparseFactor = 1.0f;
+	float _sparseFactor = 0.5f;
+	float _cageSmoothFactor = 0.0f;
 };
