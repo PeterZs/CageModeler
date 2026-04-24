@@ -17,5 +17,7 @@ MeshCageGeneration::ExecutionResult MeshCageGeneration::Execute()
     MeshCageGenerationResult result;
     result._cage = std::move(_params._cage);
 
+    LOG_DEBUG("Done computing new cage.");
+
     return result;
 } 

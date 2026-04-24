@@ -6,20 +6,15 @@
 struct BBVoxel {
     Eigen::Vector3d start_pt;
     std::vector<std::vector<std::vector<Eigen::Vector3d>>> centers, voxel_pts;
+
+    std::vector<Eigen::Vector3d> centers_, voxel_pts_;
+
     int n_voxel[3];
     float res_voxel[3];
     std::vector<std::vector<std::vector<int8_t>>> voxel_types; // 0 = feature voxel, -1 = inner voxel, 1 = outer voxel
     std::vector<int> non_manifold_vertices;
     std::vector<Eigen::Vector3d> splitted_vertices;
 };
-
-// struct Hit
-// {
-//     double t;                  
-//     Eigen::Vector3d position;  
-//     Eigen::Vector3d normal;    
-//     int face_id;               
-// };
 
 
 void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_basic_matrix, Eigen::MatrixXd& pca_based_mesh_vertices, Eigen::Vector3d& barycenter);

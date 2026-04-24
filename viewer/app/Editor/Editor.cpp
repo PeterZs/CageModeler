@@ -518,7 +518,7 @@ void Editor::OnNewCageCreated()
 
 		if (result.HasError())
 		{
-			std::cout << "Error" << std::endl; ///////////////
+			LOG_DEBUG("Error creating new cage.");
 			return;
 		}
 
@@ -581,7 +581,6 @@ void Editor::OnNewProjectCreated()
 
 		if (projectResult.HasError())
 		{
-			std::cout << "error" << std::endl;
 			// Update the status with an error.
 			_mainThreadQueue->Push([this, error = std::move(projectResult.GetError())]() mutable
 			{
@@ -596,7 +595,6 @@ void Editor::OnNewProjectCreated()
 
 		if (weightsResult.HasError())
 		{
-			std::cout << "error" << std::endl;
 			// Update the status with an error.
 			_mainThreadQueue->Push([this, error = std::move(weightsResult.GetError())]() mutable
 			{

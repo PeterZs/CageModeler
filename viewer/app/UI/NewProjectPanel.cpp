@@ -323,48 +323,7 @@ void NewProjectPanel::Layout()
 			ImGui::SameLine();
 			UIHelpers::HelpMarker("The material parameter nu for somigliana deformer.");
 
-			/*auto bulgingValue = _model->_somigBulging.load();
-			if (ImGui::InputDouble("##SomigBulging", &bulgingValue)) {
-				_model->_somigBulging = bulgingValue;
 			}
-			ImGui::SameLine();
-			UIHelpers::HelpMarker("The bulging parameter gamma for somigliana deformer.");
-
-			auto blendFactorValue = _model->_somigBlendFactor.load();
-			if (ImGui::InputDouble("##SomigBlendFactor", &blendFactorValue))
-			{
-				_model->_somigBlendFactor = blendFactorValue;
-			}
-			ImGui::SameLine();
-			UIHelpers::HelpMarker("The blending factor for somigliana deformer interpolating between local and global boundary conditions.");
-
-			if (ImGui::BeginCombo("Bulging Type",
-				ProjecSettingsHelpers::SomiglianaBulgingTypeNames[_selectedBulgingTypeIndex],
-				ImGuiComboFlags_HeightRegular | ImGuiComboFlags_WidthFitPreview))
-			{
-				for (auto i = 0; i < ProjecSettingsHelpers::SomiglianaBulgingTypeNames.size(); i++)
-				{
-					const auto isSelected = (_selectedBulgingTypeIndex == i);
-
-					if (ImGui::Selectable(ProjecSettingsHelpers::SomiglianaBulgingTypeNames[i], isSelected))
-					{
-						_selectedBulgingTypeIndex = i;
-					}
-
-					if (isSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-
-				ImGui::EndCombo();
-			}
-
-			_model->_somigBulgingType = static_cast<BulgingType>(_selectedBulgingTypeIndex);
-
-			ImGui::SameLine();
-			UIHelpers::HelpMarker("The bulging type for somigliana deformer.");*/
-		}
 		ImGui::EndDisabled();
 
 		ImGui::EndTable();
