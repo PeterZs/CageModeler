@@ -3,12 +3,12 @@
 #include <Eigen/Geometry>
 #include <vector>
 
-struct BBVoxel_ {
+struct BBVoxel {
     Eigen::Vector3d start_pt;
-    std::vector<Eigen::Vector3d> centers_, voxel_pts_;
+    std::vector<Eigen::Vector3d> centers, voxel_pts;
     int n_voxel[3];
     float res_voxel[3];
-    std::vector<int8_t> voxel_types_; 
+    std::vector<int8_t> voxel_types; 
     std::vector<int> non_manifold_vertices;
     std::vector<Eigen::Vector3d> splitted_vertices;
 
@@ -28,7 +28,7 @@ void calculatePCA(const Eigen::MatrixXd& mesh_vertices, Eigen::MatrixXd& pca_bas
 
 void computeBB(const Eigen::MatrixXd& vertices, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, const Eigen::MatrixXd& pca_basic_matrix, const Eigen::Vector3d& barycenter);
 
-void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel_& voxels_, float degreeOfSparseness);
+void voxelizeBB(const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXd& cage_vertices, BBVoxel& voxels, float degreeOfSparseness);
 
 void minMax(const double v0, const double v1, const double v2, double& min, double& max);
 bool planeBoxOverlap(const Eigen::Vector3d normal, const double d, const Eigen::Vector3d maxbox);
@@ -38,13 +38,13 @@ bool axistest_z12(const double a, const double b, const double fa, const double 
 bool axistest_z0(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
 bool axistest_x2(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
 bool axistest_y1(const double a, const double b, const double fa, const double fb, const Eigen::Matrix3d& v, const Eigen::Vector3d& halfbox);
-void identifyFeatureVoxels(BBVoxel_& voxels_, const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces);
+void identifyFeatureVoxels(BBVoxel& voxels, const Eigen::MatrixXd& mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
-void identifyOuterVoxels(BBVoxel_& voxels_);
+void identifyOuterVoxels(BBVoxel& voxels);
 
-void identifyOuterVoxelsWithFillingAlgo(BBVoxel_& voxels_, const Eigen::Vector3i seed);
+void identifyOuterVoxelsWithFillingAlgo(BBVoxel& voxels, const Eigen::Vector3i seed);
 
-void extractOuterSurface(BBVoxel_& voxels_, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
+void extractOuterSurface(BBVoxel& voxels, Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces);
 
 void smoothCage(Eigen::MatrixXd& cage_vertices, Eigen::MatrixXi& cage_faces, float lambda_smooth, int it_smooth, Eigen::MatrixXd& pca_based_mesh_vertices, const Eigen::MatrixXi& mesh_faces);
 
