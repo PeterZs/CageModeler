@@ -46,7 +46,6 @@ else()
     find_package(LAPACK REQUIRED)
 endif()
 
-
 # Additional dependencies required for the library.
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/LBC" LBCLib)
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/libigl" libIGL)
@@ -74,6 +73,7 @@ endif()
 set(IGL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/libigl/include")
 set(LBC_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/LBC/include")
 set(CAGEDEFORMATIONS_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/cagedeformations/include")
+set(CAGEGENERATIONS_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/cagegenerations/include")
 
 if (DEFINED ENABLE_SOMIGLIANA)
     set(SOMIGLIANA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/somigliana/include")
@@ -86,6 +86,7 @@ endif()
 
 # Add the library itself.
 add_subdirectory(cagedeformations)
+add_subdirectory(cagegenerations)
 
 # Add the command-line application.
 add_subdirectory(app)

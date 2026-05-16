@@ -9,6 +9,7 @@
 #include <Mesh/Operations/MeshComputeWeightsOperation.h>
 #include <Mesh/Operations/MeshExportOperation.h>
 #include <Mesh/Operations/MeshLoadOperation.h>
+#include <Mesh/Operations/MeshCageGeneration.h>
 #include <Mesh/MeshLibrary.h>
 #include <Navigation/CameraSubsystem.h>
 #include <UI/UIStyle.h>
@@ -16,6 +17,10 @@
 #include <UI/ToolBar.h>
 #include <UI/ProjectOptionsPanel.h>
 #include <UI/ProjectSettingsPanel.h>
+#include <UI/NewCagePanel.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp> // <- stellt glm::to_string bereit
 
 #include <filesystem>
 
@@ -247,6 +252,15 @@ void Editor::RecordUI()
 				_projectSettingsPanel->Present();
 			}
 
+			if (ImGui::MenuItem("New Cage..."))
+			{	
+				_newCagePanel = std::make_shared<NewCagePanel>(_projectModel,
+					_meshOperationSystem,
+					[this] { OnNewCageCancelled(); },
+					[this] { OnNewCageCreated(); });
+				_newCagePanel->Present();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -265,6 +279,11 @@ void Editor::RecordUI()
 	if (_projectSettingsPanel != nullptr)
 	{
 		_projectSettingsPanel->Layout();
+	}
+
+	if (_newCagePanel != nullptr)
+	{
+		_newCagePanel->Layout();
 	}
 
 	// If we are making a rectangle selection on the screen we want to do it before we process any mesh selection, so we can use the data.
@@ -288,6 +307,11 @@ void Editor::Update(const double deltaTime)
 	}
 
 	if (_projectSettingsPanel != nullptr && _projectSettingsPanel->IsModalPanelVisible())
+	{
+		return;
+	}
+
+	if (_newCagePanel != nullptr && _newCagePanel->IsModalPanelVisible())
 	{
 		return;
 	}
@@ -468,6 +492,72 @@ void Editor::OnProjectSettingsApplied()
 	OnNewProjectCreated();
 }
 
+void Editor::OnNewCageCreated()
+{
+	// Remove the current cage
+	if (_deformedCageHandle != InvalidHandle)
+	{
+		_scene->RemoveMesh(_deformedCageHandle);
+		_deformedCageHandle = InvalidHandle;
+	}
+	if (_deformedMeshHandle != InvalidHandle)
+	{
+		_scene->RemoveMesh(_deformedMeshHandle);
+		_deformedMeshHandle = InvalidHandle;
+	}
+
+	_threadPool->Submit([this](){
+
+		// Update _projectModel if user creates a new project
+		if(_newCagePanel != nullptr) {
+			auto _panelModel = _newCagePanel->GetModel();
+			_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
+		}
+		
+		auto result = GenerateCage(_projectModel->_cageGenerationType, _projectData->_mesh, _projectData->_mesh, _newCagePanel->GetSetting());
+
+		if (result.HasError())
+		{
+			LOG_DEBUG("Error creating new cage.");
+			return;
+		}
+
+		const auto translation = glm::translate(glm::mat4(1.0f), glm::vec3(_projectData->_centerOffset));
+		const auto scale = glm::scale(glm::mat4(1.0f), glm::vec3(_projectData->_scalingFactor));
+		const auto newModelMatrix = scale * translation;	
+		
+		_deformedMeshHandle = _scene->AddMesh(_projectData->_mesh._vertices, _projectData->_mesh._faces);
+		const auto mesh = _scene->GetMesh(_deformedMeshHandle);
+		mesh->SetModelMatrix(newModelMatrix);
+
+		_deformedCageHandle = _scene->AddCage(result.GetValue()._cage._vertices, result.GetValue()._cage._faces);
+		const auto cageMesh = _scene->GetMesh(_deformedCageHandle);
+		cageMesh->SetModelMatrix(newModelMatrix);
+
+		_isComputingWeightsData.store(true, std::memory_order_seq_cst);
+
+		_projectData->_cage = result.GetValue()._cage;
+
+		auto weightsResult = ComputeCageWeights(*_projectData);
+
+		_weightsData.Update(std::move(weightsResult.GetValue()._skinningMatrix),
+			std::move(weightsResult.GetValue()._weights),
+			std::move(weightsResult.GetValue()._interpolatedWeights),
+			std::move(weightsResult.GetValue()._psi),
+			std::move(weightsResult.GetValue()._psiTri),
+			std::move(weightsResult.GetValue()._psiQuad));
+
+		_isComputingWeightsData.store(false, std::memory_order_seq_cst);
+
+		if (_newCagePanel != nullptr)
+		{
+			_newCagePanel->Dismiss();
+			_newCagePanel = nullptr;
+		}
+	});
+	return;
+}
+
 void Editor::OnNewProjectCreated()
 {
 	if (_projectModel->CheckMissingFiles())
@@ -486,7 +576,7 @@ void Editor::OnNewProjectCreated()
 			auto _panelModel = _newProjectPanel->GetModel();
 			_projectModel = std::make_shared<ProjectModelData>(*_panelModel);
 		}
-			
+
 		auto projectResult = CreateProject();
 
 		if (projectResult.HasError())
@@ -623,6 +713,11 @@ void Editor::OnNewProjectCreated()
 void Editor::OnProjectSettingsCancelled()
 {
 	_projectSettingsPanel = nullptr;
+}
+
+void Editor::OnNewCageCancelled()
+{
+	_newCagePanel = nullptr;
 }
 
 void Editor::UpdateGizmoSelection(const ViewInfo& viewInfo, const GizmoType activeGizmoType)
@@ -1210,7 +1305,7 @@ MeshOperationResult<std::shared_ptr<ProjectData>> Editor::CreateProject() const
 		_projectModel->_deformationType,
 		_projectModel->_LBCWeightingScheme,
 		_projectModel->_meshFilepath.value(),
-		_projectModel->_cageFilepath.value(),
+		_projectModel->_cageFilepath.value_or(std::filesystem::path()),
 		_projectModel->_deformedCageFilepath,
 		_projectModel->_weightsFilepath,
 		_projectModel->_embeddingFilepath,
@@ -1243,6 +1338,19 @@ MeshOperationResult<MeshComputeWeightsOperationResult> Editor::ComputeCageWeight
 		projectData.CanInterpolateWeights(),
 		projectData._numBBWSteps,
 		projectData._numSamples);
+}
+
+MeshOperationResult<MeshCageGenerationResult> Editor::GenerateCage(const CageGenerationMethod cageGenerationMethod,
+	EigenMesh mesh,
+	EigenMesh cage,
+	NewCageSetting setting) const
+{
+	return _meshOperationSystem->ExecuteOperation<MeshCageGeneration>(
+		cageGenerationMethod,
+		std::move(mesh),
+		std::move(cage),
+		setting
+	);
 }
 
 MeshOperationResult<MeshComputeDeformationOperationResult> Editor::ComputeDeformedMesh(EigenMesh mesh,

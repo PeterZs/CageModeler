@@ -29,6 +29,10 @@ struct ProjecSettingsHelpers
 		"Square Root"
 	};
 
+	static constexpr std::array CageGenerationMethodNames = {
+		"CoarseBounding"
+	};
+
 	[[nodiscard]] static std::filesystem::path SanitizeFilepath(const std::filesystem::path& filepath)
 	{
 		const auto& filepathString = filepath.string();

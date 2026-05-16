@@ -1,4 +1,5 @@
 #include <Mesh/Operations/MeshLoadOperation.h>
+#include <Mesh/Operations/MeshCageGeneration.h>
 #include <Mesh/GeometryUtils.h>
 
 #include <cagedeformations/Parametrization.h>
@@ -8,6 +9,8 @@
 #include <igl/boundary_conditions.h>
 #include <igl/EPS.h>
 #include <igl/readDMAT.h>
+
+#include <UI/NewCageSetting.h>
 
 #include <fstream>
 
@@ -159,7 +162,30 @@ MeshLoadOperation::ExecutionResult MeshLoadOperation::Execute()
 	{
 		const auto embeddingVertices = (DeformationTypeHelpers::RequiresEmbedding(_params._deformationType) ? &embedding->_vertices : nullptr);
 
-		if (!load_cage(_params._cageFilepath.string(),
+		if (_params._cageFilepath.empty())
+		{
+			if (!DeformationTypeHelpers::RequiresEmbedding(_params._deformationType))
+			{
+				LOG_DEBUG("Cagepath was empty, there cage will be created automatically.");		
+				NewCageSetting setting;
+				MeshCageGenerationParams genParams(CageGenerationMethod::CoarseBoundingCagesByXian, mesh, EigenMesh{}, setting);
+				MeshCageGeneration generator(std::move(genParams));
+				auto result = generator.Execute();
+				if (result.HasError())
+				{
+					LOG_ERROR("Failed to generate cage.");
+					return ExecutionResult("Failed to generate cage.");
+				}
+				cage = std::move(result.GetValue()._cage);
+				LOG_DEBUG("Generated cage as fallback.");
+			}
+			else
+			{
+				LOG_ERROR("Failed to load cage and cannot generate one for embedding-based deformation.");
+				return ExecutionResult("Failed to load cage.");
+			}
+		} 
+		else if (!load_cage(_params._cageFilepath.string(),
 			cage._vertices,
 			cagePoints,
 			cage._faces,
@@ -168,12 +194,13 @@ MeshLoadOperation::ExecutionResult MeshLoadOperation::Execute()
 			embeddingVertices,
 			_params._findOffset))
 		{
-			LOG_ERROR("Failed to load cage!.");
-
+			LOG_ERROR("Failed to load cage.");
 			return ExecutionResult("Failed to load cage.");
 		}
-
-		LOG_DEBUG("Loaded deformation mesh {}.", _params._cageFilepath.string());
+		else 
+		{
+			LOG_DEBUG("Loaded deformation mesh {}.", _params._cageFilepath.string());
+		}
 	}
 
 	if (_params._deformationType == DeformationType::Somigliana)
@@ -211,16 +238,21 @@ MeshLoadOperation::ExecutionResult MeshLoadOperation::Execute()
 	EigenMesh deformedCage;
 	Eigen::VectorXi cagePointsDeformed;
 
-	if (!load_cage(deformedCageFilepath.string(),
+	if (!deformedCageFilepath.empty() && !load_cage(deformedCageFilepath.string(),
 		deformedCage._vertices,
 		cagePointsDeformed,
 		deformedCage._faces,
 		1.0,
 		_params.ShouldTriangulateQuads()))
 	{
-		LOG_ERROR("Failed to load deformed cage!.");
+		LOG_ERROR("Failed to load deformed cage!");
 
 		return ExecutionResult("Failed to load deformed cage.");
+	}
+	else if (deformedCageFilepath.empty()) 
+	{
+		deformedCage._vertices = cage._vertices;
+		deformedCage._faces = cage._faces;
 	}
 
 	if (!_params._parametersFilepath.has_value())

@@ -763,6 +763,9 @@ double GCTriInt(const Eigen::Vector3d p, const Eigen::Vector3d t1, const Eigen::
 void calculateGreenCoordinates(const Eigen::MatrixXd& C, const Eigen::MatrixXi& CF, const Eigen::MatrixXd& normals, const Eigen::MatrixXd& eta_m,
 	Eigen::MatrixXd& phi, Eigen::MatrixXd& psi)
 {
+
+	std::cout << "GC" << std::endl;
+
 	phi.resize(C.rows(), eta_m.rows());
 	psi.resize(CF.rows(), eta_m.rows());
 	phi.fill(0); psi.fill(0);
@@ -1111,8 +1114,12 @@ void computeMVCForOneVertexSimple(Eigen::MatrixXd const & C, Eigen::MatrixXi con
 	}
 }
 
+
 void computeMVC(const Eigen::MatrixXd& C, const Eigen::MatrixXi& CF, Eigen::MatrixXd const& eta_m,
     Eigen::MatrixXd& phi) {
+
+		std::cout << "MVC" << std::endl;
+
 		phi.resize(C.rows(), eta_m.rows());
 		Eigen::VectorXd w_weights(C.rows());
 		Eigen::VectorXd weights(C.rows());
@@ -1122,7 +1129,7 @@ void computeMVC(const Eigen::MatrixXd& C, const Eigen::MatrixXi& CF, Eigen::Matr
 			const Eigen::Vector3d eta = eta_m.row(eta_idx);
 			computeMVCForOneVertexSimple(C, CF, eta, weights, w_weights);
 			phi.col(eta_idx) = weights;
-		}
+		}		
 }
 
 double getSpanDeterminant(Eigen::Vector3d const& v1, Eigen::Vector3d const& v2, Eigen::Vector3d const& v3) {

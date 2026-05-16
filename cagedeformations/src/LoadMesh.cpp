@@ -59,7 +59,7 @@ bool load_mesh(std::string const& file_name, Eigen::MatrixXd& V, Eigen::MatrixXi
 		bool uses_quads = false;
 
 		if (!load_verts(file_name, V, scaling_factor, polygons))
-		{
+		{	
 			return false;
 		}
 

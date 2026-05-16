@@ -135,6 +135,12 @@ struct MeshComputeDeformationOperationResult
 	std::vector<InterpolatedVertexData> _vertexData;
 };
 
+
+struct MeshCageGenerationResult
+{	
+	EigenMesh _cage;
+};
+
 struct ProjectData
 {
 	ProjectData(const DeformationType deformationType,

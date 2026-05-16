@@ -59,6 +59,9 @@ MeshComputeDeformationOperation::ExecutionResult MeshComputeDeformationOperation
 
 		if (_params._deformationType == DeformationType::Green)
 		{
+			
+			std::cout << std::endl;
+			
 			Eigen::MatrixXd deformedNormals;
 			calcNormals(_params._deformedCage._vertices, _params._cage._faces, deformedNormals);
 			calcScalingFactors(_params._cage._vertices, _params._deformedCage._vertices, _params._cage._faces, deformedNormals);

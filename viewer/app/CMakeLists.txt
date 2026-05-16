@@ -36,6 +36,7 @@ add_executable(${PROJECT_NAME}
     UI/NewProjectPanel.cpp
     UI/ToolBar.cpp
     UI/UserInterfaceBackend.cpp
+    UI/NewCagePanel.cpp
     Tools/ToolSystem.cpp
     Thread/ThreadPool.cpp
     Input/InputSubsystem.cpp
@@ -54,6 +55,7 @@ add_executable(${PROJECT_NAME}
     Mesh/Operations/MeshExportInfluenceMapOperation.cpp
     Mesh/Operations/MeshLoadOperation.cpp
     Mesh/Operations/MeshExportOperation.cpp
+    Mesh/Operations/MeshCageGeneration.cpp
     Rendering/Commands/BufferCommand.h
     Rendering/Commands/RenderCommandScheduler.cpp
     Rendering/Core/RenderProxy.cpp
@@ -142,6 +144,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
         cagedeformations
+        cagegenerations
         spdlog::spdlog
         glm
         volk::volk volk::volk_headers

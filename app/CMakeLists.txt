@@ -10,8 +10,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 target_include_directories(${PROJECT_NAME}
 	PRIVATE
 	${IGL_INCLUDE_DIR}
-	${LBC_INCLUDE_DIR}
-	${CAGEDEFORMATIONS_INCLUDE_DIR})
+	${LBC_INCLUDE_DIR})
 
 if (DEFINED ENABLE_SOMIGLIANA)
 	target_include_directories(${PROJECT_NAME}
@@ -22,7 +21,8 @@ endif()
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-	cagedeformations
+	CageDeformations::cagedeformations
+    CageGenerations::cagegenerations
 	Eigen3::Eigen
 	Boost::program_options
 )
